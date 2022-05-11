@@ -2,7 +2,7 @@
 
 entrypoints Program ;
 
-Program.   Program ::= [ProgStmt] ;
+Prog.      Program ::= [ProgStmt] ;
 
 FnDef.	   ProgStmt ::= "fun" Ident "(" [Arg] ")" Block ";" ;
 
@@ -10,13 +10,13 @@ ProgSt.    ProgStmt ::= Stmt ;
 
 separator nonempty ProgStmt "" ;
 
-Arg. 	   Arg ::= Type Ident;
+FnArg.	   Arg ::= Type Ident;
 
 separator  Arg "," ;
 
 -- statements ----------------------------------------------
 
-Block.     Block ::= "{" [Stmt] "};" ;
+StBlock.   Block ::= "{" [Stmt] "};" ;
 
 separator  Stmt "" ;
 
@@ -30,7 +30,7 @@ AssStmt.   Stmt ::= AStmt ";" ;
 
 
 
-TupleAss.  Stmt ::= TupleBox ":=" Expr ";" ;
+TupleAss.  Stmt ::= TBox ":=" Expr ";" ;
 
 TupleBox.  TBox ::= "(" [TElem] ")" ;
 
