@@ -19,7 +19,7 @@ import qualified Prelude as C
 import qualified Data.String
 
 type Program = Program' BNFC'Position
-data Program' a = Program a [ProgStmt' a]
+data Program' a = Prog a [ProgStmt' a]
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 type ProgStmt = ProgStmt' BNFC'Position
@@ -28,11 +28,11 @@ data ProgStmt' a
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 type Arg = Arg' BNFC'Position
-data Arg' a = Arg a (Type' a) Ident
+data Arg' a = FnArg a (Type' a) Ident
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 type Block = Block' BNFC'Position
-data Block' a = Block a [Stmt' a]
+data Block' a = StBlock a [Stmt' a]
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 type Stmt = Stmt' BNFC'Position
@@ -132,7 +132,7 @@ class HasPosition a where
 
 instance HasPosition Program where
   hasPosition = \case
-    Program p _ -> p
+    Prog p _ -> p
 
 instance HasPosition ProgStmt where
   hasPosition = \case
@@ -141,11 +141,11 @@ instance HasPosition ProgStmt where
 
 instance HasPosition Arg where
   hasPosition = \case
-    Arg p _ _ -> p
+    FnArg p _ _ -> p
 
 instance HasPosition Block where
   hasPosition = \case
-    Block p _ -> p
+    StBlock p _ -> p
 
 instance HasPosition Stmt where
   hasPosition = \case

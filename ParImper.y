@@ -51,19 +51,18 @@ import LexImper
   'elif'     { PT _ (TS _ 26) }
   'else'     { PT _ (TS _ 27) }
   'for'      { PT _ (TS _ 28) }
-  'fun'      { PT _ (TS _ 29) }
-  'if'       { PT _ (TS _ 30) }
-  'int'      { PT _ (TS _ 31) }
-  'print'    { PT _ (TS _ 32) }
-  'return'   { PT _ (TS _ 33) }
-  'skip'     { PT _ (TS _ 34) }
-  'string'   { PT _ (TS _ 35) }
-  'to'       { PT _ (TS _ 36) }
-  'var'      { PT _ (TS _ 37) }
-  'while'    { PT _ (TS _ 38) }
-  '{'        { PT _ (TS _ 39) }
-  '||'       { PT _ (TS _ 40) }
-  '};'       { PT _ (TS _ 41) }
+  'if'       { PT _ (TS _ 29) }
+  'int'      { PT _ (TS _ 30) }
+  'print'    { PT _ (TS _ 31) }
+  'return'   { PT _ (TS _ 32) }
+  'skip'     { PT _ (TS _ 33) }
+  'string'   { PT _ (TS _ 34) }
+  'to'       { PT _ (TS _ 35) }
+  'var'      { PT _ (TS _ 36) }
+  'while'    { PT _ (TS _ 37) }
+  '{'        { PT _ (TS _ 38) }
+  '||'       { PT _ (TS _ 39) }
+  '};'       { PT _ (TS _ 40) }
   L_Ident    { PT _ (TV _)    }
   L_integ    { PT _ (TI _)    }
   L_quoted   { PT _ (TL _)    }
@@ -85,7 +84,7 @@ Program
 
 ProgStmt :: { (AbsImper.BNFC'Position, AbsImper.ProgStmt) }
 ProgStmt
-  : 'fun' Ident '(' ListArg ')' Block ';' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.FnDef (uncurry AbsImper.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4) (snd $6)) }
+  : Type Ident '(' ListArg ')' Block ';' { (fst $1, AbsImper.FnDef (fst $1) (snd $1) (snd $2) (snd $4) (snd $6)) }
   | Stmt { (fst $1, AbsImper.ProgSt (fst $1) (snd $1)) }
 
 ListProgStmt :: { (AbsImper.BNFC'Position, [AbsImper.ProgStmt]) }

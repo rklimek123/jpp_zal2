@@ -25,7 +25,7 @@ transProgram x = case x of
 
 transProgStmt :: Show a => AbsImper.ProgStmt' a -> Result
 transProgStmt x = case x of
-  AbsImper.FnDef _ ident args block -> failure x
+  AbsImper.FnDef _ type_ ident args block -> failure x
   AbsImper.ProgSt _ stmt -> failure x
 
 transArg :: Show a => AbsImper.Arg' a -> Result

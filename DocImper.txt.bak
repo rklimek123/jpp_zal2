@@ -31,9 +31,10 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 
 The reserved words used in Imper are the following:
   | ``bool`` | ``break`` | ``const`` | ``continue``
-  | ``elif`` | ``else`` | ``for`` | ``if``
-  | ``int`` | ``print`` | ``return`` | ``skip``
-  | ``string`` | ``to`` | ``var`` | ``while``
+  | ``elif`` | ``else`` | ``for`` | ``fun``
+  | ``if`` | ``int`` | ``print`` | ``return``
+  | ``skip`` | ``string`` | ``to`` | ``var``
+  | ``while`` |  |  |
 
 The symbols used in Imper are the following:
   | ( | ) | ; | ,
@@ -53,7 +54,7 @@ and **eps** (empty rule) belong to the BNF notation.
 All other symbols are terminals.
 
   | //Program// | -> | //[ProgStmt]//
-  | //ProgStmt// | -> | //Type// //Ident// ``(`` //[Arg]// ``)`` //Block// ``;``
+  | //ProgStmt// | -> | ``fun`` //Ident// ``(`` //[Arg]// ``)`` //Block// ``;``
   |  |  **|**  | //Stmt//
   | //[ProgStmt]// | -> | //ProgStmt//
   |  |  **|**  | //ProgStmt// //[ProgStmt]//

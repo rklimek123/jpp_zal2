@@ -81,7 +81,7 @@ String   : L_quoted { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), ((\(PT 
 
 Program :: { (AbsImper.BNFC'Position, AbsImper.Program) }
 Program
-  : ListProgStmt { (fst $1, AbsImper.Program (fst $1) (snd $1)) }
+  : ListProgStmt { (fst $1, AbsImper.Prog (fst $1) (snd $1)) }
 
 ProgStmt :: { (AbsImper.BNFC'Position, AbsImper.ProgStmt) }
 ProgStmt
@@ -95,7 +95,7 @@ ListProgStmt
 
 Arg :: { (AbsImper.BNFC'Position, AbsImper.Arg) }
 Arg
-  : Type Ident { (fst $1, AbsImper.Arg (fst $1) (snd $1) (snd $2)) }
+  : Type Ident { (fst $1, AbsImper.FnArg (fst $1) (snd $1) (snd $2)) }
 
 ListArg :: { (AbsImper.BNFC'Position, [AbsImper.Arg]) }
 ListArg
@@ -105,7 +105,7 @@ ListArg
 
 Block :: { (AbsImper.BNFC'Position, AbsImper.Block) }
 Block
-  : '{' ListStmt '};' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.Block (uncurry AbsImper.BNFC'Position (tokenLineCol $1)) (snd $2)) }
+  : '{' ListStmt '};' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.StBlock (uncurry AbsImper.BNFC'Position (tokenLineCol $1)) (snd $2)) }
 
 ListStmt :: { (AbsImper.BNFC'Position, [AbsImper.Stmt]) }
 ListStmt

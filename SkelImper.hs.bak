@@ -21,7 +21,7 @@ transIdent x = case x of
 
 transProgram :: Show a => AbsImper.Program' a -> Result
 transProgram x = case x of
-  AbsImper.Program _ progstmts -> failure x
+  AbsImper.Prog _ progstmts -> failure x
 
 transProgStmt :: Show a => AbsImper.ProgStmt' a -> Result
 transProgStmt x = case x of
@@ -30,11 +30,11 @@ transProgStmt x = case x of
 
 transArg :: Show a => AbsImper.Arg' a -> Result
 transArg x = case x of
-  AbsImper.Arg _ type_ ident -> failure x
+  AbsImper.FnArg _ type_ ident -> failure x
 
 transBlock :: Show a => AbsImper.Block' a -> Result
 transBlock x = case x of
-  AbsImper.Block _ stmts -> failure x
+  AbsImper.StBlock _ stmts -> failure x
 
 transStmt :: Show a => AbsImper.Stmt' a -> Result
 transStmt x = case x of

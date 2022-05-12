@@ -142,7 +142,7 @@ instance Print AbsImper.Ident where
   prt _ (AbsImper.Ident i) = doc $ showString i
 instance Print (AbsImper.Program' a) where
   prt i = \case
-    AbsImper.Program _ progstmts -> prPrec i 0 (concatD [prt 0 progstmts])
+    AbsImper.Prog _ progstmts -> prPrec i 0 (concatD [prt 0 progstmts])
 
 instance Print (AbsImper.ProgStmt' a) where
   prt i = \case
@@ -156,7 +156,7 @@ instance Print [AbsImper.ProgStmt' a] where
 
 instance Print (AbsImper.Arg' a) where
   prt i = \case
-    AbsImper.Arg _ type_ id_ -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_])
+    AbsImper.FnArg _ type_ id_ -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_])
 
 instance Print [AbsImper.Arg' a] where
   prt _ [] = concatD []
@@ -165,7 +165,7 @@ instance Print [AbsImper.Arg' a] where
 
 instance Print (AbsImper.Block' a) where
   prt i = \case
-    AbsImper.Block _ stmts -> prPrec i 0 (concatD [doc (showString "{"), prt 0 stmts, doc (showString "};")])
+    AbsImper.StBlock _ stmts -> prPrec i 0 (concatD [doc (showString "{"), prt 0 stmts, doc (showString "};")])
 
 instance Print [AbsImper.Stmt' a] where
   prt _ [] = concatD []

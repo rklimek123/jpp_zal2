@@ -24,7 +24,7 @@ data Program' a = Prog a [ProgStmt' a]
 
 type ProgStmt = ProgStmt' BNFC'Position
 data ProgStmt' a
-    = FnDef a Ident [Arg' a] (Block' a) | ProgSt a (Stmt' a)
+    = FnDef a (Type' a) Ident [Arg' a] (Block' a) | ProgSt a (Stmt' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 type Arg = Arg' BNFC'Position
@@ -136,7 +136,7 @@ instance HasPosition Program where
 
 instance HasPosition ProgStmt where
   hasPosition = \case
-    FnDef p _ _ _ -> p
+    FnDef p _ _ _ _ -> p
     ProgSt p _ -> p
 
 instance HasPosition Arg where
