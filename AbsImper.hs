@@ -80,7 +80,16 @@ data ElseBl' a = ElseBlock a (Block' a)
 
 type Type = Type' BNFC'Position
 data Type' a = Int a | Str a | Bool a | Tuple a [Type' a]
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
+  deriving (C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
+
+instance Eq (Type' a) where
+    Int _ == Int _ = True
+    Str _ == Str _ = True
+    Bool _ == Bool _ = True
+    Tuple _ ts1 == Tuple _ ts2 =
+      all (==True) $ zipWith (==) ts1 ts2
+    _ == _ = False
+
 
 type Expr = Expr' BNFC'Position
 data Expr' a
