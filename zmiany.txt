@@ -1,0 +1,8 @@
+definicja funkcji: typ zwracany zamiast "fun"
+
+nie mozna przysłonić zmiennej read-only
+
+to, że funkcja czegoś nie zwróci, to runtimeerror
+
+zły typ zwracany przez return oraz użycie return poza funkcją lub
+                        break / continue poza pętlą to typeerrory

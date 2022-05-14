@@ -78,16 +78,22 @@ type ElseBl = ElseBl' BNFC'Position
 data ElseBl' a = ElseBlock a (Block' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
+-- Polimorph type is used for TupleIgn
+-- Void type is internally used in type checker
 type Type = Type' BNFC'Position
-data Type' a = Int a | Str a | Bool a | Tuple a [Type' a]
+data Type' a = Int a | Str a | Bool a | Tuple a [Type' a] | Polimorph a | Void a
   deriving (C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 instance Eq (Type' a) where
+    Polimorph _ == _ = True
+    _ == Polimorph _ = True
+    
     Int _ == Int _ = True
     Str _ == Str _ = True
     Bool _ == Bool _ = True
     Tuple _ ts1 == Tuple _ ts2 =
       all (==True) $ zipWith (==) ts1 ts2
+
     _ == _ = False
 
 
