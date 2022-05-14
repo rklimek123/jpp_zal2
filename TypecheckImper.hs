@@ -8,12 +8,13 @@ import Control.Monad.Except
 import Control.Monad.State
 
 import AbsImper
+import ErrorImper
 
 typeCheck :: Program -> IO()
 typeCheck p =
     case typeOfProgram p of
         Right t -> show t -- Tutaj mogę zwrócić monadę dla interpretera
-        Left er -> putStrLn "Error:" >> putStrLn er
+        Left er -> putStrLn "Error: " >> putStrLn er
 
 type VarTypeEnv = M.Map Ident VarType
 type FunTypeEnv = M.Map Ident FunType
@@ -67,7 +68,7 @@ execTypePstmt (FnDef _ retType fname args block) = do
     
     if realRetT == retType
         then return realRetT
-        else throwError $ errorFunType fname ftype
+        else throwError $ errorFunType fname retType realRetT
   where
       ftype = FunT retType $ _argsToTypes args
 
@@ -210,8 +211,8 @@ execTypeStmt (Ret pos expr) = do
     
     typeOfExpr expr
 
-execTypeStmt (Break pos) = execTypeJump pos
-execTypeStmt (Continue pos) = execTypeJump pos
+execTypeStmt (Break pos) = execTypeJump True pos
+execTypeStmt (Continue pos) = execTypeJump False pos
 
 execTypeStmt (Print _ expr) = typeOfExpr expr
 
@@ -244,7 +245,7 @@ _getTElemType (TupleAtom pos varname) = do
     s <- get
     let mVartype = M.lookup varname $ varEnv s
     case mVartype of
-        Nothing -> throwError $ errorVarNotExist varname pos
+        Nothing -> throwError $ errorVarNotExist pos varname
         Just vartype -> return vartype
 
 _getTElemType (TupleIgn pos) =
@@ -271,12 +272,12 @@ execTypeCondBlock expr block = do
         then throwError $ errorCondExprType exprType
     typeOfBlock block
 
-execTypeJump :: BNFC'Position -> MyMonad Type
-execTypeJump pos = do
+execTypeJump :: Bool -> BNFC'Position -> MyMonad Type
+execTypeJump isBreak pos = do
     s <- get
 
     if !(insideLoop s)
-        then throwError $ errorJumpOutsideLoop pos
+        then throwError $ errorJumpOutsideLoop isBreak pos
     
     return (Void BNFC'NoPosition)
 
@@ -299,7 +300,7 @@ typeOfExpr (EVar pos varname) = do
     s <- get
     let varT = M.lookup varname $ varEnv s
     case varT of
-        Nothing -> throwError $ errorVarNotExist varname pos
+        Nothing -> throwError $ errorVarNotExist pos varname
         Just vartype -> return $ varTypeOf vartype
 
 typeOfExpr (ELitInt pos _) = return $ Int pos
@@ -314,11 +315,11 @@ typeOfExpr (EApp pos funname args) = do
     s <- get
     let fType = M.lookup funname $ funEnv s
     case fType of
-        Nothing -> throwError $ errorFunNotExist funname pos
+        Nothing -> throwError $ errorFunNotExist pos funname
         Just (FunT retType argTypes) -> do
             let len1 = length argTypes
             let len2 = length args
-            if len1 /= len2 then throwError errorFunAppArgCount pos len1 len2
+            if len1 /= len2 then throwError $ errorFunAppArgCount pos funname len1 len2
 
             let typesZip = zip (\a b -> (a, b)) argTypes args
             mapM (_compareArgType funname pos) typesZip
@@ -352,19 +353,31 @@ typeOfExpr (EAnd pos expr1 expr2) =
 typeOfExpr (EOr pos expr1 expr2) =
     typeOfBinOp (Bool BNFC'NoPosition) pos expr1 expr2
 
+
 typeOfBinOp :: Type -> BNFC'Position -> Expr -> Expr -> MyMonad Type
 typeOfBinOp expected pos expr1 expr2 = do
     exprType1 <- typeOfExpr expr1
     exprType2 <- typeOfExpr expr2
-    if exprType1 /= expected || exprType2 /= expected
-        then throwError $ errorBinaryOp pos expected exprType1 exprType2
-    return $ Int pos
+    if exprType1 /= expected
+        then throwError $ errorBinaryOp pos expected exprType1
+    if exprType2 /= expected
+        then throwError $ errorBinaryOp pos expected exprType2
+    return $ _overwritePosition pos expected
+
+
+_overwritePosition :: BNFC'Position -> Type -> Type
+_overwritePosition pos (Int _) = Int pos
+_overwritePosition pos (Str _) = Str pos
+_overwritePosition pos (Bool _) = Bool pos
+_overwritePosition pos (Tuple _ ts) = Tuple pos ts
+_overwritePosition pos (Polimorph _) = Polimorph pos
+_overwritePosition pos (Void _) = Void pos
 
 _compareArgType :: Ident -> BNFC'Position -> (Type, Type) -> MyMonad Type
 _compareArgType funname pos (expected, real) =
     if expected == real
         then return real
-        else throwError $ errorFunAppArgType funname pos expected real
+        else throwError $ errorFunAppArgType pos funname expected real
 
 _argsToTypes :: [Arg] -> [Type]
 _argsToTypes = map _argToType
@@ -401,10 +414,14 @@ _changeVar varname eType env =
     s <- get
     let prevVar = M.lookup varname $ varEnv s
     case prevVar of
-        Nothing -> throwError $ errorVarNotExist varname (hasPosition eType)
+        Nothing -> throwError $ errorVarNotExist (hasPosition eType) varname
         Just prevType ->
             if varIsReadonly prevType
-                then throwError $ errorROVarAssignment varname prevType eType
+                then throwError $
+                    errorROVarAssignment
+                        varname
+                        (varTypeOf prevType)
+                        eType
                 else (put $ _writeVar varname eType s) >> return eType
 
 _appendFunction :: Ident -> FunType -> TypeEnv -> TypeEnv
