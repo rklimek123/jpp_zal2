@@ -18,11 +18,12 @@ import System.Environment ( getArgs )
 import System.Exit        ( exitFailure )
 import Control.Monad      ( when )
 
-import AbsImper   ()
+import AbsImper   ( Program )
 import LexImper   ( Token, mkPosToken )
 import ParImper   ( pProgram, myLexer )
 import PrintImper ( Print, printTree )
 import SkelImper  ()
+import TypecheckImper
 
 type Err        = Either String
 type ParseFun a = [Token] -> Err a
@@ -31,10 +32,10 @@ type Verbosity  = Int
 putStrV :: Verbosity -> String -> IO ()
 putStrV v s = when (v > 1) $ putStrLn s
 
-runFile :: (Print a, Show a) => Verbosity -> ParseFun a -> FilePath -> IO ()
+runFile :: Verbosity -> ParseFun Program -> FilePath -> IO ()
 runFile v p f = putStrLn f >> readFile f >>= run v p
 
-run :: (Print a, Show a) => Verbosity -> ParseFun a -> String -> IO ()
+run :: Verbosity -> ParseFun Program -> String -> IO ()
 run v p s =
   case p ts of
     Left err -> do
@@ -43,17 +44,10 @@ run v p s =
       mapM_ (putStrV v . showPosToken . mkPosToken) ts
       putStrLn err
       exitFailure
-    Right tree -> do
-      putStrLn "\nParse Successful!"
-      showTree v tree
+    Right tree -> typeCheck tree
   where
   ts = myLexer s
   showPosToken ((l,c),t) = concat [ show l, ":", show c, "\t", show t ]
-
-showTree :: (Show a, Print a) => Int -> a -> IO ()
-showTree v tree = do
-  putStrV v $ "\n[Abstract Syntax]\n\n" ++ show tree
-  putStrV v $ "\n[Linearized tree]\n\n" ++ printTree tree
 
 usage :: IO ()
 usage = do

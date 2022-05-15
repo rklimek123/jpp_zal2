@@ -10,7 +10,10 @@
 
 module AbsImper where
 
-import Prelude (Integer, String)
+import Prelude
+  ( Integer, String, all, zipWith
+  , (==), ($), Bool(True, False)
+  )
 import qualified Prelude as C
   ( Eq, Ord, Show, Read
   , Functor, Foldable, Traversable
@@ -79,12 +82,11 @@ data ElseBl' a = ElseBlock a (Block' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 -- Polimorph type is used for TupleIgn
--- Void type is internally used in type checker
 type Type = Type' BNFC'Position
-data Type' a = Int a | Str a | Bool a | Tuple a [Type' a] | Polimorph a | Void a
+data Type' a = Int a | Str a | Bool a | Tuple a [Type' a] | Polimorph a
   deriving (C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
-instance Eq (Type' a) where
+instance C.Eq (Type' a) where
     Polimorph _ == _ = True
     _ == Polimorph _ = True
     

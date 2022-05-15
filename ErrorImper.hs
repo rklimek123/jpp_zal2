@@ -2,14 +2,12 @@ module ErrorImper
 where
 
 import AbsImper
-import qualified Data
 
 prettyType :: Type -> ShowS
 prettyType (Int _) = showString "int"
 prettyType (Str _) = showString "string"
 prettyType (Bool _) = showString "bool"
 prettyType (Polimorph _) = showString "_"
-prettyType (Void _) = showString "void"
 prettyType (Tuple _ types) =
     (showString "(")
     .(prettyTypesComma False types)
@@ -27,9 +25,9 @@ prettyTypesComma _ [] = id
 prettyTypeWithAt :: Type -> ShowS
 prettyTypeWithAt t =
     (showString "|").
-    (prettyType expected).
+    (prettyType t).
     (showString "|").
-    (prettyPositionAt True $ hasPosition expected)
+    (prettyPositionAt True $ hasPosition t)
 
 prettyPosition :: Bool -> BNFC'Position -> ShowS
 prettyPosition signalNothing pos =
@@ -94,7 +92,7 @@ errorFunType (Ident name) expected real =
             showString "Didn't return anything"
         Just ret ->
             (showString "Returned ").
-            (prettyTypeWithAt ret)) ""
+            (prettyTypeWithAt ret)) $ ""
 
 errorFunTypeReturn :: BNFC'Position -> Type -> Type -> String
 errorFunTypeReturn pos expected real =
@@ -106,53 +104,53 @@ errorFunTypeReturn pos expected real =
     (showString ",\n").
 
     (showString "\tbut should've returned ").
-    (prettyType expected) ""
+    (prettyType expected) $ ""
 
 errorTupleType :: Type -> Type -> String
 errorTupleType expected real =
     (showString "Tuple assignment type error.\n").
-    (msgShouldBeButIs expected real) ""
+    (msgShouldBeButIs expected real) $ ""
 
 errorForIterType :: Type -> String
 errorForIterType real =
     (showString "For loop header type error.\n").
-    (msgShouldBeButIs (Int BNFC'NoPosition) real) ""
+    (msgShouldBeButIs (Int BNFC'NoPosition) real) $ ""
 
 errorCondExprType :: Type -> String
 errorCondExprType real =
     (showString "Condition isn't a logic value\n").
-    (msgShouldBeButIs (Bool BNFC'NoPosition) real) ""
+    (msgShouldBeButIs (Bool BNFC'NoPosition) real) $ ""
 
 errorRetOutsideFun :: BNFC'Position -> String
 errorRetOutsideFun pos =
     (showString "Return statement outside function block.\n").
-    (prettyPositionAtShort pos) ""
+    (prettyPositionAtShort pos) $ ""
 
 errorJumpOutsideLoop :: Bool -> BNFC'Position -> String
 errorJumpOutsideLoop isBreak pos =
     (if isBreak then showString "Break" else showString "Continue").
     (showString " statement outside a loop.\n").
-    (prettyPositionAtShort pos) ""
+    (prettyPositionAtShort pos) $ ""
 
 msgNotExist :: BNFC'Position -> Ident -> ShowS
 msgNotExist pos (Ident name) =
     (showString "`").
     (showString name).
     (showString "` doesn't exist.\n").
-    (prettyPositionAtShort pos) ""
+    (prettyPositionAtShort pos)
 
 errorVarNotExist :: BNFC'Position -> Ident -> String
 errorVarNotExist pos name =
     (showString "Variable ").
-    (msgNotExist pos name) ""
+    (msgNotExist pos name) $ ""
 
 errorFunNotExist :: BNFC'Position -> Ident -> String
-errorFunNotExist pos (Ident name) =
+errorFunNotExist pos name =
     (showString "Function ").
-    (msgNotExist pos name) ""
+    (msgNotExist pos name) $ ""
 
 errorFunAppArgCount ::
-    BNFC'Position -> Ident -> Data.Int -> Data.Int -> String
+    BNFC'Position -> Ident -> Int -> Int -> String
 errorFunAppArgCount pos (Ident name) expected real =
     (showString "Arguments count of `").
     (showString name).
@@ -166,7 +164,7 @@ errorFunAppArgCount pos (Ident name) expected real =
     (shows real).
     (showString "\n").
     
-    (prettyPositionAtShort pos) ""
+    (prettyPositionAtShort pos) $ ""
 
 errorFunAppArgType :: BNFC'Position -> Ident -> Type -> Type -> String
 errorFunAppArgType pos (Ident funname) expected real =
@@ -175,17 +173,17 @@ errorFunAppArgType pos (Ident funname) expected real =
     (showString "` application").
     (prettyPositionAt True pos).
     (showString " uses argument with a wrong type.\n").
-    (msgShouldBeButIs expected real) ""
+    (msgShouldBeButIs expected real) $ ""
 
 errorUnaryOp :: BNFC'Position -> Type -> Type -> String
 errorUnaryOp pos expected real =
     (showString "Unary ").
-    (msgOperatorError pos expected real) ""
+    (msgOperatorError pos expected real) $ ""
 
 errorBinaryOp :: BNFC'Position -> Type -> Type -> String
 errorBinaryOp pos expected real =
     (showString "Binary ").
-    (msgOperatorError pos expected real) ""
+    (msgOperatorError pos expected real) $ ""
 
 msgROVarAction :: String -> Ident -> Type -> Type -> String
 msgROVarAction action (Ident name) prev next =
@@ -197,7 +195,7 @@ msgROVarAction action (Ident name) prev next =
     (showString "\n").
 
     (showString "\tVariable has been declared").
-    (prettyPositionAt True $ hasPosition prev) ""
+    (prettyPositionAt True $ hasPosition prev) $ ""
 
 errorROVarOverride :: Ident -> Type -> Type -> String
 errorROVarOverride = msgROVarAction "overridden"

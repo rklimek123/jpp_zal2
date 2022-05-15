@@ -4,7 +4,7 @@ entrypoints Program ;
 
 Prog.      Program ::= [ProgStmt] ;
 
-FnDef.	   ProgStmt ::= Type Ident "(" [Arg] ")" Block ";" ;
+FnDef.	   ProgStmt ::= Type Ident "(" [Arg] ")" Block ;
 
 ProgSt.    ProgStmt ::= Stmt ; 
 

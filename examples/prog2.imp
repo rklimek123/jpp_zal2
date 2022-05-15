@@ -1,0 +1,17 @@
+int power(int x, int n) {
+    if (n < 0) {
+        return 0;
+    };
+    var ret := 1;
+
+    for i:=1 to n {
+        ret := ret * x;
+    };
+
+    return ret;
+};
+var ret := 1;
+print power(3, 4);
+print "\n";
+print power(2, 10);
+print "\n";
