@@ -36,8 +36,8 @@ The reserved words used in Imper are the following:
   | ``string`` | ``to`` | ``var`` | ``while``
 
 The symbols used in Imper are the following:
-  | ( | ) | ; | ,
-  | { | }; | := | _
+  | ( | ) | , | {
+  | }; | ; | := | _
   | _T | _F | - | !
   | && | || | + | *
   | / | % | < | <=
@@ -53,7 +53,7 @@ and **eps** (empty rule) belong to the BNF notation.
 All other symbols are terminals.
 
   | //Program// | -> | //[ProgStmt]//
-  | //ProgStmt// | -> | //Type// //Ident// ``(`` //[Arg]// ``)`` //Block// ``;``
+  | //ProgStmt// | -> | //Type// //Ident// ``(`` //[Arg]// ``)`` //Block//
   |  |  **|**  | //Stmt//
   | //[ProgStmt]// | -> | //ProgStmt//
   |  |  **|**  | //ProgStmt// //[ProgStmt]//

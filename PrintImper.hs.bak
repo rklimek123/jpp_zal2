@@ -146,7 +146,7 @@ instance Print (AbsImper.Program' a) where
 
 instance Print (AbsImper.ProgStmt' a) where
   prt i = \case
-    AbsImper.FnDef _ id_ args block -> prPrec i 0 (concatD [doc (showString "fun"), prt 0 id_, doc (showString "("), prt 0 args, doc (showString ")"), prt 0 block, doc (showString ";")])
+    AbsImper.FnDef _ type_ id_ args block -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_, doc (showString "("), prt 0 args, doc (showString ")"), prt 0 block, doc (showString ";")])
     AbsImper.ProgSt _ stmt -> prPrec i 0 (concatD [prt 0 stmt])
 
 instance Print [AbsImper.ProgStmt' a] where

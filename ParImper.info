@@ -15,7 +15,7 @@ Grammar
 	Integer -> L_integ                                 (2)
 	String -> L_quoted                                 (3)
 	Program -> ListProgStmt                            (4)
-	ProgStmt -> Type Ident '(' ListArg ')' Block ';'   (5)
+	ProgStmt -> Type Ident '(' ListArg ')' Block       (5)
 	ProgStmt -> Stmt                                   (6)
 	ListProgStmt -> ProgStmt                           (7)
 	ListProgStmt -> ProgStmt ListProgStmt              (8)
@@ -471,7 +471,7 @@ State 12
 
 State 13
 
-	ProgStmt -> Type . Ident '(' ListArg ')' Block ';'    (rule 5)
+	ProgStmt -> Type . Ident '(' ListArg ')' Block      (rule 5)
 
 	L_Ident        shift, and enter state 2
 
@@ -1587,7 +1587,7 @@ State 81
 
 State 82
 
-	ProgStmt -> Type Ident . '(' ListArg ')' Block ';'    (rule 5)
+	ProgStmt -> Type Ident . '(' ListArg ')' Block      (rule 5)
 
 	'('            shift, and enter state 99
 
@@ -1898,7 +1898,7 @@ State 98
 
 State 99
 
-	ProgStmt -> Type Ident '(' . ListArg ')' Block ';'    (rule 5)
+	ProgStmt -> Type Ident '(' . ListArg ')' Block      (rule 5)
 
 	'('            shift, and enter state 126
 	')'            reduce using rule 10
@@ -2370,7 +2370,7 @@ State 128
 
 State 129
 
-	ProgStmt -> Type Ident '(' ListArg . ')' Block ';'    (rule 5)
+	ProgStmt -> Type Ident '(' ListArg . ')' Block      (rule 5)
 
 	')'            shift, and enter state 141
 
@@ -2611,7 +2611,7 @@ State 140
 
 State 141
 
-	ProgStmt -> Type Ident '(' ListArg ')' . Block ';'    (rule 5)
+	ProgStmt -> Type Ident '(' ListArg ')' . Block      (rule 5)
 
 	'{'            shift, and enter state 132
 
@@ -2729,9 +2729,30 @@ State 146
 
 State 147
 
-	ProgStmt -> Type Ident '(' ListArg ')' Block . ';'    (rule 5)
+	ProgStmt -> Type Ident '(' ListArg ')' Block .      (rule 5)
 
-	';'            shift, and enter state 151
+	'!'            reduce using rule 5
+	'('            reduce using rule 5
+	'-'            reduce using rule 5
+	'_F'           reduce using rule 5
+	'_T'           reduce using rule 5
+	'bool'         reduce using rule 5
+	'break'        reduce using rule 5
+	'const'        reduce using rule 5
+	'continue'     reduce using rule 5
+	'for'          reduce using rule 5
+	'if'           reduce using rule 5
+	'int'          reduce using rule 5
+	'print'        reduce using rule 5
+	'return'       reduce using rule 5
+	'skip'         reduce using rule 5
+	'string'       reduce using rule 5
+	'var'          reduce using rule 5
+	'while'        reduce using rule 5
+	L_Ident        reduce using rule 5
+	L_integ        reduce using rule 5
+	L_quoted       reduce using rule 5
+	%eof           reduce using rule 5
 
 
 State 148
@@ -2748,7 +2769,6 @@ State 149
 	'!'            reduce using rule 13
 	'('            reduce using rule 13
 	'-'            reduce using rule 13
-	';'            reduce using rule 13
 	'_F'           reduce using rule 13
 	'_T'           reduce using rule 13
 	'bool'         reduce using rule 13
@@ -2804,38 +2824,10 @@ State 150
 	%eof           reduce using rule 39
 
 
-State 151
-
-	ProgStmt -> Type Ident '(' ListArg ')' Block ';' .    (rule 5)
-
-	'!'            reduce using rule 5
-	'('            reduce using rule 5
-	'-'            reduce using rule 5
-	'_F'           reduce using rule 5
-	'_T'           reduce using rule 5
-	'bool'         reduce using rule 5
-	'break'        reduce using rule 5
-	'const'        reduce using rule 5
-	'continue'     reduce using rule 5
-	'for'          reduce using rule 5
-	'if'           reduce using rule 5
-	'int'          reduce using rule 5
-	'print'        reduce using rule 5
-	'return'       reduce using rule 5
-	'skip'         reduce using rule 5
-	'string'       reduce using rule 5
-	'var'          reduce using rule 5
-	'while'        reduce using rule 5
-	L_Ident        reduce using rule 5
-	L_integ        reduce using rule 5
-	L_quoted       reduce using rule 5
-	%eof           reduce using rule 5
-
-
 -----------------------------------------------------------------------------
 Grammar Totals
 -----------------------------------------------------------------------------
 Number of rules: 85
 Number of terminals: 43
 Number of non-terminals: 33
-Number of states: 152
+Number of states: 151

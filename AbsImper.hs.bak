@@ -10,7 +10,10 @@
 
 module AbsImper where
 
-import Prelude (Integer, String)
+import Prelude
+  ( Integer, String, all, zipWith
+  , (==), ($), Bool(True, False)
+  )
 import qualified Prelude as C
   ( Eq, Ord, Show, Read
   , Functor, Foldable, Traversable
@@ -24,7 +27,7 @@ data Program' a = Prog a [ProgStmt' a]
 
 type ProgStmt = ProgStmt' BNFC'Position
 data ProgStmt' a
-    = FnDef a Ident [Arg' a] (Block' a) | ProgSt a (Stmt' a)
+    = FnDef a (Type' a) Ident [Arg' a] (Block' a) | ProgSt a (Stmt' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 type Arg = Arg' BNFC'Position
@@ -78,9 +81,23 @@ type ElseBl = ElseBl' BNFC'Position
 data ElseBl' a = ElseBlock a (Block' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
+-- Polimorph type is used for TupleIgn
 type Type = Type' BNFC'Position
-data Type' a = Int a | Str a | Bool a | Tuple a [Type' a]
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
+data Type' a = Int a | Str a | Bool a | Tuple a [Type' a] | Polimorph a
+  deriving (C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
+
+instance C.Eq (Type' a) where
+    Polimorph _ == _ = True
+    _ == Polimorph _ = True
+    
+    Int _ == Int _ = True
+    Str _ == Str _ = True
+    Bool _ == Bool _ = True
+    Tuple _ ts1 == Tuple _ ts2 =
+      all (==True) $ zipWith (==) ts1 ts2
+
+    _ == _ = False
+
 
 type Expr = Expr' BNFC'Position
 data Expr' a
@@ -136,7 +153,7 @@ instance HasPosition Program where
 
 instance HasPosition ProgStmt where
   hasPosition = \case
-    FnDef p _ _ _ -> p
+    FnDef p _ _ _ _ -> p
     ProgSt p _ -> p
 
 instance HasPosition Arg where

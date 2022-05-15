@@ -13,7 +13,7 @@ typeCheck :: Program -> IO()
 typeCheck p =
     case evalProgram p of
         Right t -> putStrLn "Types OK" -- Tutaj mogę zwrócić monadę dla interpretera
-        Left er -> putStr "Error: " >> putStrLn er
+        Left er -> putStr "Error:\t" >> putStrLn er
 
 type VarTypeEnv = M.Map Ident VarType
 type FunTypeEnv = M.Map Ident FunType
@@ -354,20 +354,20 @@ typeOfExpr (Not pos expr) = do
     return $ Bool pos
 
 typeOfExpr (EMul pos expr1 _ expr2) =
-    typeOfBinOp (Int BNFC'NoPosition) pos expr1 expr2
+    typeOfBinOp (Int BNFC'NoPosition) pos expr1 expr2 (Int BNFC'NoPosition)
 typeOfExpr (EAdd pos expr1 _ expr2) =
-    typeOfBinOp (Int BNFC'NoPosition) pos expr1 expr2
+    typeOfBinOp (Int BNFC'NoPosition) pos expr1 expr2 (Int BNFC'NoPosition)
 
 typeOfExpr (ERel pos expr1 _ expr2) =
-    typeOfBinOp (Bool BNFC'NoPosition) pos expr1 expr2
+    typeOfBinOp (Int BNFC'NoPosition) pos expr1 expr2 (Bool BNFC'NoPosition)
 typeOfExpr (EAnd pos expr1 expr2) =
-    typeOfBinOp (Bool BNFC'NoPosition) pos expr1 expr2
+    typeOfBinOp (Bool BNFC'NoPosition) pos expr1 expr2 (Bool BNFC'NoPosition)
 typeOfExpr (EOr pos expr1 expr2) =
-    typeOfBinOp (Bool BNFC'NoPosition) pos expr1 expr2
+    typeOfBinOp (Bool BNFC'NoPosition) pos expr1 expr2 (Bool BNFC'NoPosition)
 
 
-typeOfBinOp :: Type -> BNFC'Position -> Expr -> Expr -> MyMonad Type
-typeOfBinOp expected pos expr1 expr2 = do
+typeOfBinOp :: Type -> BNFC'Position -> Expr -> Expr -> Type -> MyMonad Type
+typeOfBinOp expected pos expr1 expr2 expectRet = do
     exprType1 <- typeOfExpr expr1
     exprType2 <- typeOfExpr expr2
     if exprType1 /= expected
@@ -376,7 +376,7 @@ typeOfBinOp expected pos expr1 expr2 = do
     if exprType2 /= expected
         then throwError $ errorBinaryOp pos expected exprType2
         else pure ()
-    return $ _overwritePosition pos expected
+    return $ _overwritePosition pos expectRet
 
 
 _overwritePosition :: BNFC'Position -> Type -> Type
