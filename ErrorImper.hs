@@ -13,6 +13,12 @@ prettyType (Tuple _ types) =
     .(prettyTypesComma False types)
     .(showString ")")
 
+prettyTypeOuter :: Type -> ShowS
+prettyTypeOuter t =
+    (showString "|").
+    (prettyType t).
+    (showString "|")
+
 prettyTypesComma :: Bool -> [Type] -> ShowS
 prettyTypesComma showComma (t:ts) =
     (if showComma
@@ -24,9 +30,7 @@ prettyTypesComma _ [] = id
 
 prettyTypeWithAt :: Type -> ShowS
 prettyTypeWithAt t =
-    (showString "|").
-    (prettyType t).
-    (showString "|").
+    (prettyTypeOuter t).
     (prettyPositionAt True $ hasPosition t)
 
 prettyPosition :: Bool -> BNFC'Position -> ShowS
@@ -63,11 +67,11 @@ msgShouldBeButIs :: Type -> Type -> ShowS
 msgShouldBeButIs expected real =
     (prettyPositionAtShort $ hasPosition real).
     (showString " type should be ").
-    (prettyType expected).
+    (prettyTypeOuter expected).
     (showString ",\n").
 
     (showString "\tbut actually evaluates to ").
-    (prettyType real)
+    (prettyTypeOuter real)
 
 msgOperatorError :: BNFC'Position -> Type -> Type -> ShowS
 msgOperatorError pos expected real =
@@ -100,11 +104,11 @@ errorFunTypeReturn pos expected real =
     
     (prettyPositionAtShort pos).
     (showString " returning ").
-    (prettyType real).
+    (prettyTypeOuter real).
     (showString ",\n").
 
     (showString "\tbut should've returned ").
-    (prettyType expected) $ ""
+    (prettyTypeOuter expected) $ ""
 
 errorTupleType :: Type -> Type -> String
 errorTupleType expected real =
