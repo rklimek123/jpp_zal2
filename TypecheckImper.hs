@@ -1,4 +1,4 @@
-module TypecheckImper
+module TypecheckImper (typeCheck)
 where
 
 import qualified Data.Map as M
@@ -8,16 +8,17 @@ import Control.Monad.State
 
 import AbsImper
 import ErrorImper
+import InterpretImper (interpret)
 
 typeCheck :: Program -> IO()
 typeCheck p =
     case evalProgram p of
-        Right t -> putStrLn "Types OK" -- Tutaj mogę zwrócić monadę dla interpretera
+        Right _ -> interpret p
         Left er -> putStr "Error:\t" >> putStrLn er
 
 type VarTypeEnv = M.Map Ident VarType
 type FunTypeEnv = M.Map Ident FunType
-data TypeEnv = TypeEnv {
+newtype TypeEnv = TypeEnv {
         funEnv :: FunTypeEnv,
         varEnv :: VarTypeEnv,
         insideLoop :: Bool,
