@@ -1,6 +1,6 @@
-(int, (int, bool)) f(bool cond) {
+<int, <int, bool> > f(bool cond) {
     if (cond) {
-        return (0, (1, cond));
+        return <<0, <<1, cond>>>>;
     };
 };
 

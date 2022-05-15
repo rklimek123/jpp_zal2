@@ -1,5 +1,5 @@
-(int, string) f() {
-    return (5, "five");
+<int, string> f() {
+    return <<5, "five">>;
 };
 
 int g() {
