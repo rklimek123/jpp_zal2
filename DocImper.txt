@@ -37,11 +37,12 @@ The reserved words used in Imper are the following:
 
 The symbols used in Imper are the following:
   | ( | ) | , | {
-  | }; | ; | := | _
-  | _T | _F | - | !
-  | && | || | + | *
-  | / | % | < | <=
-  | > | >= | == | !=
+  | }; | ; | := | :=:
+  | _ | _T | _F | -
+  | ! | && | || | +
+  | * | / | % | <
+  | <= | > | >= | ==
+  | != |  |  |
 
 ===Comments===
 Single-line comments begin with --.Multiple-line comments are  enclosed with {# and -}.
@@ -67,7 +68,7 @@ All other symbols are terminals.
   | //Stmt// | -> | ``var`` //AStmt// ``;``
   |  |  **|**  | ``const`` //AStmt// ``;``
   |  |  **|**  | //AStmt// ``;``
-  |  |  **|**  | //TBox// ``:=`` //Expr// ``;``
+  |  |  **|**  | //TBox// ``:=:`` //Expr// ``;``
   |  |  **|**  | //IfBl// //[ElifBl]//
   |  |  **|**  | //IfBl// //[ElifBl]// //ElseBl//
   |  |  **|**  | ``for`` //AStmt// ``to`` //Expr// //Block//

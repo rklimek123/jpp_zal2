@@ -1,0 +1,11 @@
+var a := 0;
+
+while (_T) {
+    print a;
+    a := a + 1;
+    if (a >= 10) {
+        break;
+    };
+};
+
+break;

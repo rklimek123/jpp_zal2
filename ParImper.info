@@ -29,7 +29,7 @@ Grammar
 	Stmt -> 'var' AStmt ';'                            (16)
 	Stmt -> 'const' AStmt ';'                          (17)
 	Stmt -> AStmt ';'                                  (18)
-	Stmt -> TBox ':=' Expr ';'                         (19)
+	Stmt -> TBox ':=:' Expr ';'                        (19)
 	Stmt -> IfBl ListElifBl                            (20)
 	Stmt -> IfBl ListElifBl ElseBl                     (21)
 	Stmt -> 'for' AStmt 'to' Expr Block                (22)
@@ -111,34 +111,35 @@ Terminals
 	'-'            { PT _ (TS _ 10) }
 	'/'            { PT _ (TS _ 11) }
 	':='           { PT _ (TS _ 12) }
-	';'            { PT _ (TS _ 13) }
-	'<'            { PT _ (TS _ 14) }
-	'<='           { PT _ (TS _ 15) }
-	'=='           { PT _ (TS _ 16) }
-	'>'            { PT _ (TS _ 17) }
-	'>='           { PT _ (TS _ 18) }
-	'_'            { PT _ (TS _ 19) }
-	'_F'           { PT _ (TS _ 20) }
-	'_T'           { PT _ (TS _ 21) }
-	'bool'         { PT _ (TS _ 22) }
-	'break'        { PT _ (TS _ 23) }
-	'const'        { PT _ (TS _ 24) }
-	'continue'     { PT _ (TS _ 25) }
-	'elif'         { PT _ (TS _ 26) }
-	'else'         { PT _ (TS _ 27) }
-	'for'          { PT _ (TS _ 28) }
-	'if'           { PT _ (TS _ 29) }
-	'int'          { PT _ (TS _ 30) }
-	'print'        { PT _ (TS _ 31) }
-	'return'       { PT _ (TS _ 32) }
-	'skip'         { PT _ (TS _ 33) }
-	'string'       { PT _ (TS _ 34) }
-	'to'           { PT _ (TS _ 35) }
-	'var'          { PT _ (TS _ 36) }
-	'while'        { PT _ (TS _ 37) }
-	'{'            { PT _ (TS _ 38) }
-	'||'           { PT _ (TS _ 39) }
-	'};'           { PT _ (TS _ 40) }
+	':=:'          { PT _ (TS _ 13) }
+	';'            { PT _ (TS _ 14) }
+	'<'            { PT _ (TS _ 15) }
+	'<='           { PT _ (TS _ 16) }
+	'=='           { PT _ (TS _ 17) }
+	'>'            { PT _ (TS _ 18) }
+	'>='           { PT _ (TS _ 19) }
+	'_'            { PT _ (TS _ 20) }
+	'_F'           { PT _ (TS _ 21) }
+	'_T'           { PT _ (TS _ 22) }
+	'bool'         { PT _ (TS _ 23) }
+	'break'        { PT _ (TS _ 24) }
+	'const'        { PT _ (TS _ 25) }
+	'continue'     { PT _ (TS _ 26) }
+	'elif'         { PT _ (TS _ 27) }
+	'else'         { PT _ (TS _ 28) }
+	'for'          { PT _ (TS _ 29) }
+	'if'           { PT _ (TS _ 30) }
+	'int'          { PT _ (TS _ 31) }
+	'print'        { PT _ (TS _ 32) }
+	'return'       { PT _ (TS _ 33) }
+	'skip'         { PT _ (TS _ 34) }
+	'string'       { PT _ (TS _ 35) }
+	'to'           { PT _ (TS _ 36) }
+	'var'          { PT _ (TS _ 37) }
+	'while'        { PT _ (TS _ 38) }
+	'{'            { PT _ (TS _ 39) }
+	'||'           { PT _ (TS _ 40) }
+	'};'           { PT _ (TS _ 41) }
 	L_Ident        { PT _ (TV _) }
 	L_integ        { PT _ (TI _) }
 	L_quoted       { PT _ (TL _) }
@@ -430,9 +431,9 @@ State 10
 
 State 11
 
-	Stmt -> TBox . ':=' Expr ';'                        (rule 19)
+	Stmt -> TBox . ':=:' Expr ';'                       (rule 19)
 
-	':='           shift, and enter state 86
+	':=:'          shift, and enter state 86
 
 
 State 12
@@ -1666,7 +1667,7 @@ State 85
 
 State 86
 
-	Stmt -> TBox ':=' . Expr ';'                        (rule 19)
+	Stmt -> TBox ':=:' . Expr ';'                       (rule 19)
 
 	'!'            shift, and enter state 21
 	'('            shift, and enter state 47
@@ -1800,7 +1801,7 @@ State 93
 
 State 94
 
-	Stmt -> TBox ':=' Expr . ';'                        (rule 19)
+	Stmt -> TBox ':=:' Expr . ';'                       (rule 19)
 
 	';'            shift, and enter state 134
 
@@ -2108,7 +2109,7 @@ State 110
 
 	')'            reduce using rule 31
 	','            reduce using rule 31
-	':='           reduce using rule 31
+	':=:'          reduce using rule 31
 
 
 State 111
@@ -2461,7 +2462,7 @@ State 133
 
 State 134
 
-	Stmt -> TBox ':=' Expr ';' .                        (rule 19)
+	Stmt -> TBox ':=:' Expr ';' .                       (rule 19)
 
 	'!'            reduce using rule 19
 	'('            reduce using rule 19
@@ -2828,6 +2829,6 @@ State 150
 Grammar Totals
 -----------------------------------------------------------------------------
 Number of rules: 85
-Number of terminals: 43
+Number of terminals: 44
 Number of non-terminals: 33
 Number of states: 151

@@ -1,0 +1,14 @@
+(int, (int, bool)) f(bool cond) {
+    if (cond) {
+        return (0, (1, cond));
+    };
+};
+
+int g() {
+    -- Had we put here:
+    --     if (some condition) {return 3};
+    -- we wouldn't always go with this flow, but
+    -- the error won't happen.
+    -- It has to be also checked at runtime.
+    skip;
+};

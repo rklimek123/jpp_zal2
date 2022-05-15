@@ -176,7 +176,7 @@ instance Print (AbsImper.Stmt' a) where
     AbsImper.Decl _ astmt -> prPrec i 0 (concatD [doc (showString "var"), prt 0 astmt, doc (showString ";")])
     AbsImper.DeclRO _ astmt -> prPrec i 0 (concatD [doc (showString "const"), prt 0 astmt, doc (showString ";")])
     AbsImper.AssStmt _ astmt -> prPrec i 0 (concatD [prt 0 astmt, doc (showString ";")])
-    AbsImper.TupleAss _ tbox expr -> prPrec i 0 (concatD [prt 0 tbox, doc (showString ":="), prt 0 expr, doc (showString ";")])
+    AbsImper.TupleAss _ tbox expr -> prPrec i 0 (concatD [prt 0 tbox, doc (showString ":=:"), prt 0 expr, doc (showString ";")])
     AbsImper.Cond _ ifbl elifbls -> prPrec i 0 (concatD [prt 0 ifbl, prt 0 elifbls])
     AbsImper.CondElse _ ifbl elifbls elsebl -> prPrec i 0 (concatD [prt 0 ifbl, prt 0 elifbls, prt 0 elsebl])
     AbsImper.For _ astmt expr block -> prPrec i 0 (concatD [doc (showString "for"), prt 0 astmt, doc (showString "to"), prt 0 expr, prt 0 block])

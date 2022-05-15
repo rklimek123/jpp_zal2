@@ -28,7 +28,7 @@ $u = [. \n]          -- universal: any character
 
 -- Symbols and non-identifier-like reserved words
 
-@rsyms = \( | \) | \, | \{ | \} \; | \; | \: \= | \_ | \_ "T" | \_ "F" | \- | \! | \& \& | \| \| | \+ | \* | \/ | \% | \< | \< \= | \> | \> \= | \= \= | \! \=
+@rsyms = \( | \) | \, | \{ | \} \; | \; | \: \= | \: \= \: | \_ | \_ "T" | \_ "F" | \- | \! | \& \& | \| \| | \+ | \* | \/ | \% | \< | \< \= | \> | \> \= | \= \= | \! \=
 
 :-
 
@@ -158,22 +158,23 @@ eitherResIdent tv s = treeFind resWords
 -- | The keywords and symbols of the language organized as binary search tree.
 resWords :: BTree
 resWords =
-  b "_T" 21
+  b "_F" 21
     (b "/" 11
        (b ")" 6
           (b "%" 3 (b "!=" 2 (b "!" 1 N N) N) (b "(" 5 (b "&&" 4 N N) N))
           (b "," 9 (b "+" 8 (b "*" 7 N N) N) (b "-" 10 N N)))
-       (b "==" 16
-          (b "<" 14 (b ";" 13 (b ":=" 12 N N) N) (b "<=" 15 N N))
-          (b "_" 19 (b ">=" 18 (b ">" 17 N N) N) (b "_F" 20 N N))))
-    (b "print" 31
-       (b "elif" 26
-          (b "const" 24
-             (b "break" 23 (b "bool" 22 N N) N) (b "continue" 25 N N))
-          (b "if" 29 (b "for" 28 (b "else" 27 N N) N) (b "int" 30 N N)))
-       (b "var" 36
-          (b "string" 34 (b "skip" 33 (b "return" 32 N N) N) (b "to" 35 N N))
-          (b "||" 39 (b "{" 38 (b "while" 37 N N) N) (b "};" 40 N N))))
+       (b "<=" 16
+          (b ";" 14 (b ":=:" 13 (b ":=" 12 N N) N) (b "<" 15 N N))
+          (b ">=" 19 (b ">" 18 (b "==" 17 N N) N) (b "_" 20 N N))))
+    (b "print" 32
+       (b "elif" 27
+          (b "break" 24
+             (b "bool" 23 (b "_T" 22 N N) N)
+             (b "continue" 26 (b "const" 25 N N) N))
+          (b "if" 30 (b "for" 29 (b "else" 28 N N) N) (b "int" 31 N N)))
+       (b "var" 37
+          (b "string" 35 (b "skip" 34 (b "return" 33 N N) N) (b "to" 36 N N))
+          (b "||" 40 (b "{" 39 (b "while" 38 N N) N) (b "};" 41 N N))))
   where
   b s n = B bs (TS bs n)
     where

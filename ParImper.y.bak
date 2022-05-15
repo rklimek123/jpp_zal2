@@ -84,7 +84,7 @@ Program
 
 ProgStmt :: { (AbsImper.BNFC'Position, AbsImper.ProgStmt) }
 ProgStmt
-  : Type Ident '(' ListArg ')' Block ';' { (fst $1, AbsImper.FnDef (fst $1) (snd $1) (snd $2) (snd $4) (snd $6)) }
+  : Type Ident '(' ListArg ')' Block { (fst $1, AbsImper.FnDef (fst $1) (snd $1) (snd $2) (snd $4) (snd $6)) }
   | Stmt { (fst $1, AbsImper.ProgSt (fst $1) (snd $1)) }
 
 ListProgStmt :: { (AbsImper.BNFC'Position, [AbsImper.ProgStmt]) }

@@ -211,8 +211,11 @@ execTypeStmt (For _ roAss expr block) = do
     execTypeBlock block
     put s
 
-execTypeStmt (While _ expr block) =
+execTypeStmt (While _ expr block) = do
+    s <- get
+    put $ _appendInLoop True s
     execTypeCondBlock expr block
+    put s
 
 execTypeStmt (Ret pos expr) = do
     s <- get

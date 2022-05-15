@@ -35,34 +35,35 @@ import LexImper
   '-'        { PT _ (TS _ 10) }
   '/'        { PT _ (TS _ 11) }
   ':='       { PT _ (TS _ 12) }
-  ';'        { PT _ (TS _ 13) }
-  '<'        { PT _ (TS _ 14) }
-  '<='       { PT _ (TS _ 15) }
-  '=='       { PT _ (TS _ 16) }
-  '>'        { PT _ (TS _ 17) }
-  '>='       { PT _ (TS _ 18) }
-  '_'        { PT _ (TS _ 19) }
-  '_F'       { PT _ (TS _ 20) }
-  '_T'       { PT _ (TS _ 21) }
-  'bool'     { PT _ (TS _ 22) }
-  'break'    { PT _ (TS _ 23) }
-  'const'    { PT _ (TS _ 24) }
-  'continue' { PT _ (TS _ 25) }
-  'elif'     { PT _ (TS _ 26) }
-  'else'     { PT _ (TS _ 27) }
-  'for'      { PT _ (TS _ 28) }
-  'if'       { PT _ (TS _ 29) }
-  'int'      { PT _ (TS _ 30) }
-  'print'    { PT _ (TS _ 31) }
-  'return'   { PT _ (TS _ 32) }
-  'skip'     { PT _ (TS _ 33) }
-  'string'   { PT _ (TS _ 34) }
-  'to'       { PT _ (TS _ 35) }
-  'var'      { PT _ (TS _ 36) }
-  'while'    { PT _ (TS _ 37) }
-  '{'        { PT _ (TS _ 38) }
-  '||'       { PT _ (TS _ 39) }
-  '};'       { PT _ (TS _ 40) }
+  ':=:'      { PT _ (TS _ 13) }
+  ';'        { PT _ (TS _ 14) }
+  '<'        { PT _ (TS _ 15) }
+  '<='       { PT _ (TS _ 16) }
+  '=='       { PT _ (TS _ 17) }
+  '>'        { PT _ (TS _ 18) }
+  '>='       { PT _ (TS _ 19) }
+  '_'        { PT _ (TS _ 20) }
+  '_F'       { PT _ (TS _ 21) }
+  '_T'       { PT _ (TS _ 22) }
+  'bool'     { PT _ (TS _ 23) }
+  'break'    { PT _ (TS _ 24) }
+  'const'    { PT _ (TS _ 25) }
+  'continue' { PT _ (TS _ 26) }
+  'elif'     { PT _ (TS _ 27) }
+  'else'     { PT _ (TS _ 28) }
+  'for'      { PT _ (TS _ 29) }
+  'if'       { PT _ (TS _ 30) }
+  'int'      { PT _ (TS _ 31) }
+  'print'    { PT _ (TS _ 32) }
+  'return'   { PT _ (TS _ 33) }
+  'skip'     { PT _ (TS _ 34) }
+  'string'   { PT _ (TS _ 35) }
+  'to'       { PT _ (TS _ 36) }
+  'var'      { PT _ (TS _ 37) }
+  'while'    { PT _ (TS _ 38) }
+  '{'        { PT _ (TS _ 39) }
+  '||'       { PT _ (TS _ 40) }
+  '};'       { PT _ (TS _ 41) }
   L_Ident    { PT _ (TV _)    }
   L_integ    { PT _ (TI _)    }
   L_quoted   { PT _ (TL _)    }
@@ -116,7 +117,7 @@ Stmt
   : 'var' AStmt ';' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.Decl (uncurry AbsImper.BNFC'Position (tokenLineCol $1)) (snd $2)) }
   | 'const' AStmt ';' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.DeclRO (uncurry AbsImper.BNFC'Position (tokenLineCol $1)) (snd $2)) }
   | AStmt ';' { (fst $1, AbsImper.AssStmt (fst $1) (snd $1)) }
-  | TBox ':=' Expr ';' { (fst $1, AbsImper.TupleAss (fst $1) (snd $1) (snd $3)) }
+  | TBox ':=:' Expr ';' { (fst $1, AbsImper.TupleAss (fst $1) (snd $1) (snd $3)) }
   | IfBl ListElifBl { (fst $1, AbsImper.Cond (fst $1) (snd $1) (snd $2)) }
   | IfBl ListElifBl ElseBl { (fst $1, AbsImper.CondElse (fst $1) (snd $1) (snd $2) (snd $3)) }
   | 'for' AStmt 'to' Expr Block { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.For (uncurry AbsImper.BNFC'Position (tokenLineCol $1)) (snd $2) (snd $4) (snd $5)) }

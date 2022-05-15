@@ -30,7 +30,7 @@ AssStmt.   Stmt ::= AStmt ";" ;
 
 
 
-TupleAss.  Stmt ::= TBox ":=" Expr ";" ;
+TupleAss.  Stmt ::= TBox ":=:" Expr ";" ;
 
 TupleBox.  TBox ::= "(" [TElem] ")" ;
 
