@@ -15,9 +15,9 @@ interpret p =
         Right output -> putStrLn output
         Left er -> putStr "Error:\t" >> putStrLn er
 
-data 
+data Val = Int Int | Bool Bool | Str String | Tuple [Val]
 
-type Store = M.Map Loc -> 
+type Store = M.Map Loc 
 type VarEnv = M.Map Ident VarType
 type FunEnv = M.Map Ident FunType
 newtype Global = Global {

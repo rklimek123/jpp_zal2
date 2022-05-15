@@ -9,9 +9,9 @@ prettyType (Str _) = showString "string"
 prettyType (Bool _) = showString "bool"
 prettyType (Polimorph _) = showString "_"
 prettyType (Tuple _ types) =
-    (showString "(")
+    (showString "<")
     .(prettyTypesComma False types)
-    .(showString ")")
+    .(showString ">")
 
 prettyTypeOuter :: Type -> ShowS
 prettyTypeOuter t =

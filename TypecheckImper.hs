@@ -8,17 +8,17 @@ import Control.Monad.State
 
 import AbsImper
 import ErrorImper
-import InterpretImper (interpret)
+--import InterpretImper (interpret)
 
 typeCheck :: Program -> IO()
 typeCheck p =
     case evalProgram p of
-        Right _ -> interpret p
+        Right _ -> putStrLn "OK"--interpret p
         Left er -> putStr "Error:\t" >> putStrLn er
 
 type VarTypeEnv = M.Map Ident VarType
 type FunTypeEnv = M.Map Ident FunType
-newtype TypeEnv = TypeEnv {
+data TypeEnv = TypeEnv {
         funEnv :: FunTypeEnv,
         varEnv :: VarTypeEnv,
         insideLoop :: Bool,

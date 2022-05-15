@@ -38,32 +38,36 @@ import LexImper
   ':=:'      { PT _ (TS _ 13) }
   ';'        { PT _ (TS _ 14) }
   '<'        { PT _ (TS _ 15) }
-  '<='       { PT _ (TS _ 16) }
-  '=='       { PT _ (TS _ 17) }
-  '>'        { PT _ (TS _ 18) }
-  '>='       { PT _ (TS _ 19) }
-  '_'        { PT _ (TS _ 20) }
-  '_F'       { PT _ (TS _ 21) }
-  '_T'       { PT _ (TS _ 22) }
-  'bool'     { PT _ (TS _ 23) }
-  'break'    { PT _ (TS _ 24) }
-  'const'    { PT _ (TS _ 25) }
-  'continue' { PT _ (TS _ 26) }
-  'elif'     { PT _ (TS _ 27) }
-  'else'     { PT _ (TS _ 28) }
-  'for'      { PT _ (TS _ 29) }
-  'if'       { PT _ (TS _ 30) }
-  'int'      { PT _ (TS _ 31) }
-  'print'    { PT _ (TS _ 32) }
-  'return'   { PT _ (TS _ 33) }
-  'skip'     { PT _ (TS _ 34) }
-  'string'   { PT _ (TS _ 35) }
-  'to'       { PT _ (TS _ 36) }
-  'var'      { PT _ (TS _ 37) }
-  'while'    { PT _ (TS _ 38) }
-  '{'        { PT _ (TS _ 39) }
-  '||'       { PT _ (TS _ 40) }
-  '};'       { PT _ (TS _ 41) }
+  '<<'       { PT _ (TS _ 16) }
+  '<='       { PT _ (TS _ 17) }
+  '=='       { PT _ (TS _ 18) }
+  '>'        { PT _ (TS _ 19) }
+  '>='       { PT _ (TS _ 20) }
+  '>>'       { PT _ (TS _ 21) }
+  '['        { PT _ (TS _ 22) }
+  ']'        { PT _ (TS _ 23) }
+  '_'        { PT _ (TS _ 24) }
+  '_F'       { PT _ (TS _ 25) }
+  '_T'       { PT _ (TS _ 26) }
+  'bool'     { PT _ (TS _ 27) }
+  'break'    { PT _ (TS _ 28) }
+  'const'    { PT _ (TS _ 29) }
+  'continue' { PT _ (TS _ 30) }
+  'elif'     { PT _ (TS _ 31) }
+  'else'     { PT _ (TS _ 32) }
+  'for'      { PT _ (TS _ 33) }
+  'if'       { PT _ (TS _ 34) }
+  'int'      { PT _ (TS _ 35) }
+  'print'    { PT _ (TS _ 36) }
+  'return'   { PT _ (TS _ 37) }
+  'skip'     { PT _ (TS _ 38) }
+  'string'   { PT _ (TS _ 39) }
+  'to'       { PT _ (TS _ 40) }
+  'var'      { PT _ (TS _ 41) }
+  'while'    { PT _ (TS _ 42) }
+  '{'        { PT _ (TS _ 43) }
+  '||'       { PT _ (TS _ 44) }
+  '};'       { PT _ (TS _ 45) }
   L_Ident    { PT _ (TV _)    }
   L_integ    { PT _ (TI _)    }
   L_quoted   { PT _ (TL _)    }
@@ -135,7 +139,7 @@ AStmt
 
 TBox :: { (AbsImper.BNFC'Position, AbsImper.TBox) }
 TBox
-  : '(' ListTElem ')' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.TupleBox (uncurry AbsImper.BNFC'Position (tokenLineCol $1)) (snd $2)) }
+  : '[' ListTElem ']' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.TupleBox (uncurry AbsImper.BNFC'Position (tokenLineCol $1)) (snd $2)) }
 
 TElem :: { (AbsImper.BNFC'Position, AbsImper.TElem) }
 TElem
@@ -171,7 +175,7 @@ Type
   : 'int' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.Int (uncurry AbsImper.BNFC'Position (tokenLineCol $1))) }
   | 'string' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.Str (uncurry AbsImper.BNFC'Position (tokenLineCol $1))) }
   | 'bool' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.Bool (uncurry AbsImper.BNFC'Position (tokenLineCol $1))) }
-  | '(' ListType ')' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.Tuple (uncurry AbsImper.BNFC'Position (tokenLineCol $1)) (snd $2)) }
+  | '<' ListType '>' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.Tuple (uncurry AbsImper.BNFC'Position (tokenLineCol $1)) (snd $2)) }
 
 ListType :: { (AbsImper.BNFC'Position, [AbsImper.Type]) }
 ListType
@@ -185,7 +189,7 @@ Expr6
   | Integer { (fst $1, AbsImper.ELitInt (fst $1) (snd $1)) }
   | '_T' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.ELitTrue (uncurry AbsImper.BNFC'Position (tokenLineCol $1))) }
   | '_F' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.ELitFalse (uncurry AbsImper.BNFC'Position (tokenLineCol $1))) }
-  | '(' ListExpr ')' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.ELitTuple (uncurry AbsImper.BNFC'Position (tokenLineCol $1)) (snd $2)) }
+  | '<<' ListExpr '>>' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), AbsImper.ELitTuple (uncurry AbsImper.BNFC'Position (tokenLineCol $1)) (snd $2)) }
   | Ident '(' ListExpr ')' { (fst $1, AbsImper.EApp (fst $1) (snd $1) (snd $3)) }
   | String { (fst $1, AbsImper.EString (fst $1) (snd $1)) }
   | '(' Expr ')' { (uncurry AbsImper.BNFC'Position (tokenLineCol $1), (snd $2)) }

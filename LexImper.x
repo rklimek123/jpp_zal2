@@ -28,7 +28,7 @@ $u = [. \n]          -- universal: any character
 
 -- Symbols and non-identifier-like reserved words
 
-@rsyms = \( | \) | \, | \{ | \} \; | \; | \: \= | \: \= \: | \_ | \_ "T" | \_ "F" | \- | \! | \& \& | \| \| | \+ | \* | \/ | \% | \< | \< \= | \> | \> \= | \= \= | \! \=
+@rsyms = \( | \) | \, | \{ | \} \; | \; | \: \= | \: \= \: | \[ | \] | \_ | \< | \> | \_ "T" | \_ "F" | \< \< | \> \> | \- | \! | \& \& | \| \| | \+ | \* | \/ | \% | \< \= | \> \= | \= \= | \! \=
 
 :-
 
@@ -158,23 +158,27 @@ eitherResIdent tv s = treeFind resWords
 -- | The keywords and symbols of the language organized as binary search tree.
 resWords :: BTree
 resWords =
-  b "_F" 21
-    (b "/" 11
+  b "]" 23
+    (b ":=" 12
        (b ")" 6
           (b "%" 3 (b "!=" 2 (b "!" 1 N N) N) (b "(" 5 (b "&&" 4 N N) N))
-          (b "," 9 (b "+" 8 (b "*" 7 N N) N) (b "-" 10 N N)))
-       (b "<=" 16
-          (b ";" 14 (b ":=:" 13 (b ":=" 12 N N) N) (b "<" 15 N N))
-          (b ">=" 19 (b ">" 18 (b "==" 17 N N) N) (b "_" 20 N N))))
-    (b "print" 32
-       (b "elif" 27
-          (b "break" 24
-             (b "bool" 23 (b "_T" 22 N N) N)
-             (b "continue" 26 (b "const" 25 N N) N))
-          (b "if" 30 (b "for" 29 (b "else" 28 N N) N) (b "int" 31 N N)))
-       (b "var" 37
-          (b "string" 35 (b "skip" 34 (b "return" 33 N N) N) (b "to" 36 N N))
-          (b "||" 40 (b "{" 39 (b "while" 38 N N) N) (b "};" 41 N N))))
+          (b "," 9 (b "+" 8 (b "*" 7 N N) N) (b "/" 11 (b "-" 10 N N) N)))
+       (b "==" 18
+          (b "<" 15
+             (b ";" 14 (b ":=:" 13 N N) N) (b "<=" 17 (b "<<" 16 N N) N))
+          (b ">>" 21 (b ">=" 20 (b ">" 19 N N) N) (b "[" 22 N N))))
+    (b "int" 35
+       (b "const" 29
+          (b "_T" 26
+             (b "_F" 25 (b "_" 24 N N) N) (b "break" 28 (b "bool" 27 N N) N))
+          (b "else" 32
+             (b "elif" 31 (b "continue" 30 N N) N)
+             (b "if" 34 (b "for" 33 N N) N)))
+       (b "var" 41
+          (b "skip" 38
+             (b "return" 37 (b "print" 36 N N) N)
+             (b "to" 40 (b "string" 39 N N) N))
+          (b "||" 44 (b "{" 43 (b "while" 42 N N) N) (b "};" 45 N N))))
   where
   b s n = B bs (TS bs n)
     where

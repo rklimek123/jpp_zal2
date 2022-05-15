@@ -32,7 +32,7 @@ AssStmt.   Stmt ::= AStmt ";" ;
 
 TupleAss.  Stmt ::= TBox ":=:" Expr ";" ;
 
-TupleBox.  TBox ::= "(" [TElem] ")" ;
+TupleBox.  TBox ::= "[" [TElem] "]" ;
 
 TupleTup.  TElem ::= TBox ;
 
@@ -82,7 +82,7 @@ Str.       Type ::= "string" ;
 
 Bool.      Type ::= "bool" ;
 
-Tuple.     Type ::= "(" [Type] ")" ;
+Tuple.     Type ::= "<" [Type] ">" ;
 
 separator  Type "," ;
 
@@ -96,7 +96,7 @@ ELitTrue.  Expr6 ::= "_T" ;
 
 ELitFalse. Expr6 ::= "_F" ;
 
-ELitTuple. Expr6 ::= "(" [Expr] ")" ;
+ELitTuple. Expr6 ::= "<<" [Expr] ">>" ;
 
 EApp.      Expr6 ::= Ident "(" [Expr] ")" ;
 

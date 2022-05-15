@@ -194,7 +194,7 @@ instance Print (AbsImper.AStmt' a) where
 
 instance Print (AbsImper.TBox' a) where
   prt i = \case
-    AbsImper.TupleBox _ telems -> prPrec i 0 (concatD [doc (showString "("), prt 0 telems, doc (showString ")")])
+    AbsImper.TupleBox _ telems -> prPrec i 0 (concatD [doc (showString "["), prt 0 telems, doc (showString "]")])
 
 instance Print (AbsImper.TElem' a) where
   prt i = \case
@@ -228,7 +228,7 @@ instance Print (AbsImper.Type' a) where
     AbsImper.Int _ -> prPrec i 0 (concatD [doc (showString "int")])
     AbsImper.Str _ -> prPrec i 0 (concatD [doc (showString "string")])
     AbsImper.Bool _ -> prPrec i 0 (concatD [doc (showString "bool")])
-    AbsImper.Tuple _ types -> prPrec i 0 (concatD [doc (showString "("), prt 0 types, doc (showString ")")])
+    AbsImper.Tuple _ types -> prPrec i 0 (concatD [doc (showString "<"), prt 0 types, doc (showString ">")])
 
 instance Print [AbsImper.Type' a] where
   prt _ [] = concatD []
@@ -241,7 +241,7 @@ instance Print (AbsImper.Expr' a) where
     AbsImper.ELitInt _ n -> prPrec i 6 (concatD [prt 0 n])
     AbsImper.ELitTrue _ -> prPrec i 6 (concatD [doc (showString "_T")])
     AbsImper.ELitFalse _ -> prPrec i 6 (concatD [doc (showString "_F")])
-    AbsImper.ELitTuple _ exprs -> prPrec i 6 (concatD [doc (showString "("), prt 0 exprs, doc (showString ")")])
+    AbsImper.ELitTuple _ exprs -> prPrec i 6 (concatD [doc (showString "<<"), prt 0 exprs, doc (showString ">>")])
     AbsImper.EApp _ id_ exprs -> prPrec i 6 (concatD [prt 0 id_, doc (showString "("), prt 0 exprs, doc (showString ")")])
     AbsImper.EString _ str -> prPrec i 6 (concatD [printString str])
     AbsImper.Neg _ expr -> prPrec i 5 (concatD [doc (showString "-"), prt 6 expr])

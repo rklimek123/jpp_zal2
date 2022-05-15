@@ -37,11 +37,13 @@ The reserved words used in Imper are the following:
 
 The symbols used in Imper are the following:
   | ( | ) | , | {
-  | }; | ; | := | _
-  | _T | _F | - | !
-  | && | || | + | *
-  | / | % | < | <=
-  | > | >= | == | !=
+  | }; | ; | := | :=:
+  | [ | ] | _ | <<
+  | >> | _T | _F | -
+  | ! | && | || | +
+  | * | / | % | <
+  | <= | > | >= | ==
+  | != |  |  |
 
 ===Comments===
 Single-line comments begin with --.Multiple-line comments are  enclosed with {# and -}.
@@ -67,7 +69,7 @@ All other symbols are terminals.
   | //Stmt// | -> | ``var`` //AStmt// ``;``
   |  |  **|**  | ``const`` //AStmt// ``;``
   |  |  **|**  | //AStmt// ``;``
-  |  |  **|**  | //TBox// ``:=`` //Expr// ``;``
+  |  |  **|**  | //TBox// ``:=:`` //Expr// ``;``
   |  |  **|**  | //IfBl// //[ElifBl]//
   |  |  **|**  | //IfBl// //[ElifBl]// //ElseBl//
   |  |  **|**  | ``for`` //AStmt// ``to`` //Expr// //Block//
@@ -79,7 +81,7 @@ All other symbols are terminals.
   |  |  **|**  | ``skip`` ``;``
   |  |  **|**  | //Expr// ``;``
   | //AStmt// | -> | //Ident// ``:=`` //Expr//
-  | //TBox// | -> | ``(`` //[TElem]// ``)``
+  | //TBox// | -> | ``[`` //[TElem]// ``]``
   | //TElem// | -> | //TBox//
   |  |  **|**  | //Ident//
   |  |  **|**  | ``_``
@@ -94,7 +96,7 @@ All other symbols are terminals.
   | //Type// | -> | ``int``
   |  |  **|**  | ``string``
   |  |  **|**  | ``bool``
-  |  |  **|**  | ``(`` //[Type]// ``)``
+  |  |  **|**  | ``<<`` //[Type]// ``>>``
   | //[Type]// | -> | **eps**
   |  |  **|**  | //Type//
   |  |  **|**  | //Type// ``,`` //[Type]//
@@ -102,7 +104,7 @@ All other symbols are terminals.
   |  |  **|**  | //Integer//
   |  |  **|**  | ``_T``
   |  |  **|**  | ``_F``
-  |  |  **|**  | ``(`` //[Expr]// ``)``
+  |  |  **|**  | ``<<`` //[Expr]// ``>>``
   |  |  **|**  | //Ident// ``(`` //[Expr]// ``)``
   |  |  **|**  | //String//
   |  |  **|**  | ``(`` //Expr// ``)``
