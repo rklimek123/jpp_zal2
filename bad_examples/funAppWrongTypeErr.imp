@@ -1,0 +1,6 @@
+int f(int a, int b) {
+    return a;
+};
+
+f(1, 2);
+f(_F, 2);

@@ -206,7 +206,8 @@ execTypeStmt (For _ roAss expr block) = do
         then throwError $ errorForIterType beginType
         else pure ()
 
-    put $ _appendInLoop True s
+    s' <- get
+    put $ _appendInLoop True s'
 
     execTypeBlock block
     put s

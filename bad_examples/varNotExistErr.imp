@@ -1,0 +1,3 @@
+const ro := 5;
+print (ro + 5);
+print (ror + 5);
