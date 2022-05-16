@@ -2,6 +2,7 @@ module InterpretImper
 where
 
 import qualified Data.Map as M
+import Data.Maybe
 
 import Control.Monad.Except
 import Control.Monad.State
@@ -11,7 +12,7 @@ import ErrorImper
 
 interpret :: Program -> IO()
 interpret p =
-    case execProgram p of
+    case evalProgram p of
         Right output -> putStrLn $ output ""
         Left er -> putStr "Error:\t" >> putStrLn er
 
@@ -41,7 +42,7 @@ prettyPrintVals showComma (v:vs) =
 prettyPrintVals _ [] = id
 
 newtype Loc = Loc Int
-    deriving (C.Eq, C.Ord, C.Show, C.Read)
+    deriving (Eq, Ord, Show, Read)
 
 type Store = M.Map Loc Val
 type VarEnv = M.Map Ident Loc
@@ -54,8 +55,8 @@ data Global = Global {
     }
 
 data FunData = FunData {
-        funEnv :: FunEnv,
-        varEnv :: VarEnv,
+        funEnvF :: FunEnv,
+        varEnvF :: VarEnv,
         funArgs :: [Arg],
         funBlock :: Block
     }
@@ -69,7 +70,7 @@ emptyGlobal = Global {
 
 type MainMonad = ExceptT String (State Global)
 
-data Interruption = None | Break | Continue | Return Val
+data Interruption = INone | IBreak | IContinue | IReturn Val
 
 setInterruption :: Interruption -> MainMonad ShowS -> MainMonad (ShowS, Interruption)
 setInterruption inter m = do
@@ -86,24 +87,26 @@ execProgram :: Program -> MainMonad ShowS
 execProgram (Prog _ pstmts) = execPstmts pstmts id
 
 execPstmts :: [ProgStmt] -> ShowS -> MainMonad ShowS
-execPstmts (p:ps) t =
-    execPstmt p >>= execTypePstmts ps >>= (return $ t.)
-execPstmts [] t = return t
+execPstmts (p:ps) acc =
+    execPstmt p acc >>= execPstmts ps
+execPstmts [] acc = return acc
 
-execPstmt :: ProgStmt -> MainMonad ShowS
-execPstmt (ProgSt _ stmt) = do
+execPstmt :: ProgStmt -> ShowS -> MainMonad ShowS
+execPstmt (ProgSt _ stmt) acc = do
     (side, _) <- execStmt stmt
-    return side
-execPstmt (FnDef _ _ fname args block) =
-    get >>= put $ _appendFunction fname args block >> return id
+    return $ acc.side
+execPstmt (FnDef _ _ fname args block) acc = do
+    g <- get
+    put $ _appendFunction fname args block g
+    return acc
 
 execStmt :: Stmt -> MainMonad (ShowS, Interruption)
-execStmt (Decl _ assSt) = setInterruption None $ execVarDecl assSt
-execStmt (DeclRO _ assSt) = setInterruption None $ execVarDecl assSt
-execStmt (AssStmt _ assSt) = setInterruption None $ execAss assSt
+execStmt (Decl _ assSt) = setInterruption INone $ execVarDecl assSt
+execStmt (DeclRO _ assSt) = setInterruption INone $ execVarDecl assSt
+execStmt (AssStmt _ assSt) = setInterruption INone $ execAss assSt
 
 execStmt (TupleAss p tbox expr) =
-    setInterruption None $ do
+    setInterruption INone $ do
         (side, val) <- execExpr expr
         reassignTElem (TupleTup p tbox) val
         return side
@@ -126,7 +129,7 @@ execStmt (CondElse _ ifBlock elifBlocks elseBlock) = do
 
 execStmt (For _ roAss@(Ass p iname beginE) endE block) = do
     g <- get
-    (side1, _) <- execVarDecl roAss
+    side1 <- execVarDecl roAss
     (_, beginVal) <- execExpr (EVar p iname)
     (side2, endVal) <- execExpr endE
 
@@ -139,50 +142,46 @@ execStmt (While _ expr block) = execWhile expr block id
 
 execStmt (Ret _ expr) = do
     (side, val) <- execExpr expr
-    return (side, Return val)
+    return (side, IReturn val)
 
-execStmt (Break _) = return (id, Break)
-execStmt (Continue _) = return (id, Continue)
+execStmt (Break _) = return (id, IBreak)
+execStmt (Continue _) = return (id, IContinue)
 
 execStmt (Print _ expr) = do
     (side, val) <- execExpr expr
-    return (side.(prettyPrintVal val), None)
+    return (side.(prettyPrintVal val), INone)
 
-execStmt (Skip _) = return (id, None)
+execStmt (Skip _) = return (id, INone)
 
 execStmt (SExp _ expr) = do
     (side, _) <- execExpr expr
-    return (side, None)
+    return (side, INone)
 
 execExpr :: Expr -> MainMonad (ShowS, Val)
 execExpr (EVar _ name) = do
     g <- get
-    let val =
-        fromJust $
-            M.lookup (fromJust (
-                M.lookup name $ varEnv g)
-            ) $ store g
+    let val = fromJust (M.lookup (fromJust (M.lookup name $ varEnv g)) $ store g)
     return (id, val)
 
-execExpr (ELitInt _ i) = return (id, IntV i)
+execExpr (ELitInt _ i) = return (id, IntV $ fromInteger i)
 execExpr (ELitTrue _) = return (id, BoolV True)
 execExpr (ELitFalse _) = return (id, BoolV False)
 
-execExpr (ELitTuple _ exprs) =
+execExpr (ELitTuple _ exprs) = do
     results <- execExprs exprs
-    (sides, vals) <- unzip results
+    let (sides, vals) = unzip results
     return (foldr (.) id sides, TupleV vals)
 
 execExpr (EApp pos fname exprs) = do
     args <- execExprs exprs
-    (sides, vals) <- unzip results
+    let (sides, vals) = unzip args
     let side1 = foldr (.) id sides
 
     g <- get
     let f = fromJust $ M.lookup fname $ funEnv g
     put $ Global {
-        funEnv = funEnv f,
-        varEnv = varEnv f,
+        funEnv = funEnvF f,
+        varEnv = varEnvF f,
         store = store g,
         nextFreeLoc = nextFreeLoc g
     }
@@ -191,19 +190,19 @@ execExpr (EApp pos fname exprs) = do
     (side2, inter) <- execBlock (funBlock f)
 
     case inter of
-        Return r -> do
+        IReturn r -> do
             softOverwriteEnv g
             return (side1.side2, r)
         _ -> throwError $ errorFunNoReturn pos fname
 
 execExpr (EString _ s) = return (id, StrV s)
 
-execExpr (Neg _ expr) =
+execExpr (Neg _ expr) = do
     (side, val) <- execExpr expr
     let num = valToInt val
     return (side, IntV $ -num)
 
-execExpr (Not _ expr) =
+execExpr (Not _ expr) = do
     (side, val) <- execExpr expr
     let b = valToBool val
     return (side, BoolV $ not b)
@@ -216,14 +215,14 @@ execExpr (EAdd _ e1 op e2) = do
     (side2, v2) <- execExpr e2
     let val1 = valToInt v1
     let val2 = valToInt v2
-    return (side1.side2, IntV $ funOp op val1 val2)
+    return (side1.side2, IntV $ funOpAdd op val1 val2)
 
 execExpr (ERel _ e1 op e2) = do
     (side1, v1) <- execExpr e1
     (side2, v2) <- execExpr e2
     let val1 = valToInt v1
     let val2 = valToInt v2
-    return (side1.side2, BoolV $ funOp op val1 val2)
+    return (side1.side2, BoolV $ funOpRel op val1 val2)
 
 execExpr (EAnd _ e1 e2) =
     execBinBoolOp (&&) e1 e2
@@ -259,9 +258,9 @@ changeVar varname val = do
 addVar :: Ident -> Val -> MainMonad ()
 addVar varname val = do
     g <- get
-    let nfl = nextFreeLoc g
+    let nfl = Loc $ nextFreeLoc g
     put $ _writeStore nfl val
-        $ _addVar varname nfl
+        $ _appendVar varname nfl
         $ _incrementNextFreeLoc g
 
 addFunArgs :: [(Arg, Val)] -> MainMonad ()
@@ -294,7 +293,7 @@ execElifBlocks (e:es) acc = do
     if success
         then return (acc.side, True, inter)
         else execElifBlocks es $ acc.side
-execElifBlocks [] acc = return (acc, False, None)
+execElifBlocks [] acc = return (acc, False, INone)
 
 execElifBlock :: ElifBl -> MainMonad (ShowS, Bool, Interruption)
 execElifBlock (ElifBlock _ expr block) =
@@ -314,7 +313,7 @@ execCond expr block = do
                     (sideBlock, inter) <- execBlock block
                     return (side.sideBlock, True, inter)
                 else
-                    return (side, False, None)
+                    return (side, False, INone)
         _ -> undefined
 
 execBlock :: Block -> MainMonad (ShowS, Interruption)
@@ -328,9 +327,9 @@ execStmts :: [Stmt] -> ShowS -> MainMonad (ShowS, Interruption)
 execStmts (s:st) acc = do
     (side, inter) <- execStmt s
     case inter of
-        None -> execStmts st (acc.side)
+        INone -> execStmts st (acc.side)
         _ -> return (acc.side, inter)
-execStmts [] acc = return (acc, None)
+execStmts [] acc = return (acc, INone)
 
 execFor :: Int -> Int -> Block -> ShowS -> MainMonad (ShowS, Interruption)
 execFor begin end block acc =
@@ -338,11 +337,11 @@ execFor begin end block acc =
     in do
         (side, inter) <- execBlock block
         case inter of
-            Break -> return (acc.side, None)
-            Return _ -> return (acc.side, inter)
+            IBreak -> return (acc.side, INone)
+            IReturn _ -> return (acc.side, inter)
             _ ->
                 if begin == end
-                    then return (acc.side, None)
+                    then return (acc.side, INone)
                     else execFor (nextIter begin) end block $ acc.side
 
 execWhile :: Expr -> Block -> ShowS -> MainMonad (ShowS, Interruption)
@@ -352,10 +351,10 @@ execWhile expr block acc = do
         then do
             (side2, inter) <- execBlock block
             case inter of
-                Break -> return (acc.side1.side2, None)
-                Return _ -> return (acc.side1.side2, inter)
+                IBreak -> return (acc.side1.side2, INone)
+                IReturn _ -> return (acc.side1.side2, inter)
                 _ -> execWhile expr block $ acc.side1.side2
-        else return (acc.side1, None)
+        else return (acc.side1, INone)
 
 execMul :: BNFC'Position -> MulOp -> Expr -> Expr -> MainMonad (ShowS, Val)
 execMul _ op@(Times _) e1 e2 = do
@@ -364,7 +363,7 @@ execMul _ op@(Times _) e1 e2 = do
     let val1 = valToInt v1
     let val2 = valToInt v2
 
-    return (side1.side2, IntV $ funOp op val1 val2)
+    return (side1.side2, IntV $ funOpMul op val1 val2)
 
 execMul p op@(Div _) e1 e2 = do
     (side1, v1) <- execExpr e1
@@ -374,7 +373,7 @@ execMul p op@(Div _) e1 e2 = do
     
     if val2 == 0
         then throwError $ errorDivZero p val1
-        else return (side1.side2, IntV $ funOp op val1 val2)
+        else return (side1.side2, IntV $ funOpMul op val1 val2)
 
 execMul p op@(Mod _) e1 e2 = do
     (side1, v1) <- execExpr e1
@@ -384,7 +383,7 @@ execMul p op@(Mod _) e1 e2 = do
     
     if val2 == 0
         then throwError $ errorModZero p val1
-        else return (side1.side2, IntV $ funOp op val1 val2)
+        else return (side1.side2, IntV $ funOpMul op val1 val2)
 
 execBinBoolOp :: (Bool -> Bool -> Bool) -> Expr -> Expr -> MainMonad (ShowS, Val)
 execBinBoolOp binOp e1 e2 = do
@@ -394,22 +393,22 @@ execBinBoolOp binOp e1 e2 = do
     let val2 = valToBool v2
     return (side1.side2, BoolV $ binOp val1 val2)
 
-funOp :: MulOp -> (Int -> Int -> Int)
-funOp (Times _) = (*)
-funOp (Div _) = div
-funOp (Mod _) = mod
+funOpMul :: MulOp -> (Int -> Int -> Int)
+funOpMul (Times _) = (*)
+funOpMul (Div _) = div
+funOpMul (Mod _) = mod
 
-funOp :: AddOp -> (Int -> Int -> Int)
-funOp (Plus _) = (+)
-funOp (Minus _) = (-)
+funOpAdd :: AddOp -> (Int -> Int -> Int)
+funOpAdd (Plus _) = (+)
+funOpAdd (Minus _) = (-)
 
-funOp :: RelOp -> (Int -> Int -> Bool)
-funOp (LTH _) = (<)
-funOp (LE _) = (<=)
-funOp (GTH _) = (>)
-funOp (GE _) = (>=)
-funOp (EQU _) = (==)
-funOp (NE _) = (!=)
+funOpRel :: RelOp -> (Int -> Int -> Bool)
+funOpRel (LTH _) = (<)
+funOpRel (LE _) = (<=)
+funOpRel (GTH _) = (>)
+funOpRel (GE _) = (>=)
+funOpRel (EQU _) = (==)
+funOpRel (NE _) = (/=)
 
 softOverwriteEnv :: Global -> MainMonad ()
 softOverwriteEnv g = do
@@ -440,11 +439,11 @@ _appendVar varname loc glob =
 _appendFunctionRecursive :: Ident -> [Arg] -> Block -> Global -> FunEnv
 _appendFunctionRecursive fname args funblock glob =
     M.insert
-        fname,
+        fname
         FunData {
-            funEnv =
+            funEnvF =
                 _appendFunctionRecursive fname args funblock glob,
-            varEnv = varEnv glob,
+            varEnvF = varEnv glob,
             funArgs = args,
             funBlock = funblock
         } $ funEnv glob

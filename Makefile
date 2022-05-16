@@ -24,7 +24,7 @@ all : Imper
 %.hs : %.x
 	${ALEX} ${ALEX_OPTS} $<
 
-Imper : AbsImper.hs LexImper.hs ParImper.hs PrintImper.hs CommonImper.hs ErrorImper.hs TypecheckImper.hs InterpretImper.hs Imper.hs
+Imper : AbsImper.hs LexImper.hs ParImper.hs PrintImper.hs ErrorImper.hs TypecheckImper.hs InterpretImper.hs Imper.hs
 	${GHC} ${GHC_OPTS} $@
 
 # Rules for cleaning generated files.
