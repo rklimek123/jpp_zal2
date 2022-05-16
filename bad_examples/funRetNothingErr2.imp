@@ -1,0 +1,14 @@
+<int, <int, bool> > f(bool cond) {
+    if (cond) {
+        return <<0, <<1, cond>>>>;
+    };
+};
+
+{#
+    Typechecker says f is correct,
+    despite it having a route
+    that doesn't return anything.
+-}
+
+print f(2 + 2 != 4);
+-- Error checked during runtime

@@ -93,7 +93,7 @@ errorFunType (Ident name) expected real =
     (showString "\t").
     (case real of
         Nothing ->
-            showString "Didn't return anything"
+            showString "Doesn't return anything"
         Just ret ->
             (showString "Returned ").
             (prettyTypeWithAt ret)) $ ""
