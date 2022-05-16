@@ -227,7 +227,7 @@ errorDivZero out p val =
 errorModZero :: ShowS -> BNFC'Position -> Int -> String
 errorModZero out p val =
     (putPreviousOutput out).
-    (showString "Modulo zero.\n").
+    (showString "Modulo by zero.\n").
     (prettyPositionAtShort p).
     (showString "\n\tReconstructed expression: (").
     (shows val).
@@ -235,8 +235,5 @@ errorModZero out p val =
 
 putPreviousOutput :: ShowS -> ShowS
 putPreviousOutput out =
-    (showString "!!!!! RuntimeError !!!!!\n").
-    (showString "___| PROGRAM OUTPUT |___\n").
     out.
-    (showString "\n").
-    (showString "________________________\n")
+    (showString "!!!!! RuntimeError !!!!!\n")
