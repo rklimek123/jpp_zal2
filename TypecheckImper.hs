@@ -8,13 +8,25 @@ import Control.Monad.State
 
 import AbsImper
 import ErrorImper
---import InterpretImper (interpret)
+import InterpretImper (interpret)
 
 typeCheck :: Program -> IO()
 typeCheck p =
     case evalProgram p of
-        Right _ -> putStrLn "OK"--interpret p
+        Right _ -> interpret p
         Left er -> putStr "Error:\t" >> putStrLn er
+
+type VarType = VarType' BNFC'Position
+-- The type and is the variable read-only
+data VarType' a = VarT {
+        varTypeOf :: (Type' a),
+        varIsReadonly :: Bool
+    } deriving (Eq, Ord, Show, Read)
+
+type FunType = FunType' BNFC'Position
+-- First is the returned type, the rest are the parameters
+data FunType' a = FunT (Type' a) [Type' a]
+  deriving (Eq, Ord, Show, Read)
 
 type VarTypeEnv = M.Map Ident VarType
 type FunTypeEnv = M.Map Ident FunType
@@ -32,35 +44,23 @@ emptyTypeEnv = TypeEnv {
     insideFun = False
 }
 
-type VarType = VarType' BNFC'Position
--- The type and is the variable read-only
-data VarType' a = VarT {
-        varTypeOf :: (Type' a),
-        varIsReadonly :: Bool
-    } deriving (Eq, Ord, Show, Read)
-
-type FunType = FunType' BNFC'Position
--- First is the returned type, the rest are the parameters
-data FunType' a = FunT (Type' a) [Type' a]
-  deriving (Eq, Ord, Show, Read)
-
-type MyMonad = ExceptT String (State TypeEnv)
+type TypeMonad = ExceptT String (State TypeEnv)
 
 evalProgram :: Program -> Either String ()
-evalProgram = execMyMonad.execTypeProgram
+evalProgram = execTypeMonad.execTypeProgram
 
-execMyMonad :: MyMonad () -> Either String ()
-execMyMonad m = evalState (runExceptT m) emptyTypeEnv
+execTypeMonad :: TypeMonad () -> Either String ()
+execTypeMonad m = evalState (runExceptT m) emptyTypeEnv
 
-execTypeProgram :: Program -> MyMonad ()
+execTypeProgram :: Program -> TypeMonad ()
 execTypeProgram (Prog _ pstmts) = execTypePstmts pstmts
 
-execTypePstmts :: [ProgStmt] -> MyMonad ()
+execTypePstmts :: [ProgStmt] -> TypeMonad ()
 execTypePstmts (p:ps) = execTypePstmt p >> execTypePstmts ps
 execTypePstmts [] = return ()
 
 
-execTypePstmt :: ProgStmt -> MyMonad ()
+execTypePstmt :: ProgStmt -> TypeMonad ()
 execTypePstmt (ProgSt _ stmt) = execTypeStmt stmt
 execTypePstmt (FnDef _ retType fname args block) = do
     s <- get
@@ -85,23 +85,23 @@ execTypePstmt (FnDef _ retType fname args block) = do
 
 -- check if the types are correct inside the block
 -- and the only type that can be returned matches the parameter Type
-inferTypeOfBlock :: Block -> Type -> MyMonad (Maybe Type)
+inferTypeOfBlock :: Block -> Type -> TypeMonad (Maybe Type)
 inferTypeOfBlock (StBlock pos stmts) infType = do
     s <- get
     retType <- inferTypeReturn stmts infType Nothing
     put s
     return retType
 
-inferTypeReturn :: [Stmt] -> Type -> Maybe Type -> MyMonad (Maybe Type)
+inferTypeReturn :: [Stmt] -> Type -> Maybe Type -> TypeMonad (Maybe Type)
 inferTypeReturn (s:st) infType retType =
     inferTypeReturnSingle s infType retType >>= inferTypeReturn st infType
 inferTypeReturn [] _ retType = return retType
 
-inferTypeReturnSingle :: Stmt -> Type -> Maybe Type -> MyMonad (Maybe Type)
+inferTypeReturnSingle :: Stmt -> Type -> Maybe Type -> TypeMonad (Maybe Type)
 inferTypeReturnSingle st infType retType =
     execTypeStmt st >> inferReturnedType st infType retType
 
-inferReturnedType :: Stmt -> Type -> Maybe Type -> MyMonad (Maybe Type)
+inferReturnedType :: Stmt -> Type -> Maybe Type -> TypeMonad (Maybe Type)
 inferReturnedType (Ret pos expr) infType retType = do
     exprType <- typeOfExpr expr
     if exprType == infType
@@ -143,35 +143,35 @@ inferReturnedType st _ t = execTypeStmt st >> return t
 condTrue :: Expr
 condTrue = ELitTrue BNFC'NoPosition
 
-inferReturnedTypeIf :: IfBl -> Type -> Maybe Type -> MyMonad (Maybe Type)
+inferReturnedTypeIf :: IfBl -> Type -> Maybe Type -> TypeMonad (Maybe Type)
 inferReturnedTypeIf (IfBlock _ expr block) =
     inferReturnedTypeInBlock block
 
-inferReturnedTypeElifs :: [ElifBl] -> Type -> Maybe Type -> MyMonad (Maybe Type)
+inferReturnedTypeElifs :: [ElifBl] -> Type -> Maybe Type -> TypeMonad (Maybe Type)
 inferReturnedTypeElifs (e:es) infType retType =
     inferReturnedTypeElif e infType retType >>= inferReturnedTypeElifs es infType
 inferReturnedTypeElifs [] _ t = return t
 
-inferReturnedTypeElif :: ElifBl -> Type -> Maybe Type -> MyMonad (Maybe Type)
+inferReturnedTypeElif :: ElifBl -> Type -> Maybe Type -> TypeMonad (Maybe Type)
 inferReturnedTypeElif (ElifBlock _ _ block) =
     inferReturnedTypeInBlock block
 
-inferReturnedTypeElse :: ElseBl -> Type -> Maybe Type -> MyMonad (Maybe Type)
+inferReturnedTypeElse :: ElseBl -> Type -> Maybe Type -> TypeMonad (Maybe Type)
 inferReturnedTypeElse (ElseBlock _ block) =
     inferReturnedTypeInBlock block
 
-inferReturnedTypeInBlock :: Block -> Type -> Maybe Type -> MyMonad (Maybe Type)
+inferReturnedTypeInBlock :: Block -> Type -> Maybe Type -> TypeMonad (Maybe Type)
 inferReturnedTypeInBlock block infType retType = do
     blockType <- inferTypeOfBlock block infType
     case blockType of
         Nothing -> return retType
         _ -> return blockType
 
-execTypeStmts :: [Stmt] -> MyMonad ()
+execTypeStmts :: [Stmt] -> TypeMonad ()
 execTypeStmts (st:sts) = execTypeStmt st >> execTypeStmts sts
 execTypeStmts [] = return ()
 
-execTypeStmt :: Stmt -> MyMonad ()
+execTypeStmt :: Stmt -> TypeMonad ()
 execTypeStmt (Decl _ assSt) =
     execTypeVarDecl False assSt >> return ()
 
@@ -182,7 +182,6 @@ execTypeStmt (AssStmt _ assSt) = execTypeAss assSt
 
 execTypeStmt (TupleAss _ tbox expr) = do
     exprType <- typeOfExpr expr
-    s <- get
     tboxType <- typeOfTBox tbox
     if exprType == tboxType
         then return ()
@@ -237,26 +236,26 @@ execTypeStmt (Skip _) = return ()
 execTypeStmt (SExp _ expr) =
     typeOfExpr expr >> return ()
 
-execTypeVarDecl :: Bool -> AStmt -> MyMonad Type
+execTypeVarDecl :: Bool -> AStmt -> TypeMonad Type
 execTypeVarDecl isReadOnly (Ass _ varname expr) = do
     exprType <- typeOfExpr expr
     _addVar varname exprType isReadOnly
     return exprType
 
-execTypeAss :: AStmt -> MyMonad ()
+execTypeAss :: AStmt -> TypeMonad ()
 execTypeAss (Ass _ varname expr) = do
     exprType <- typeOfExpr expr
     _changeVar varname exprType
 
-typeOfTBox :: TBox -> MyMonad Type
+typeOfTBox :: TBox -> TypeMonad Type
 typeOfTBox (TupleBox pos tElems) = do
     types <- typeOfTElems tElems
     return (Tuple pos types)
 
-typeOfTElems :: [TElem] -> MyMonad [Type]
+typeOfTElems :: [TElem] -> TypeMonad [Type]
 typeOfTElems = mapM typeOfTElem
 
-typeOfTElem :: TElem -> MyMonad Type
+typeOfTElem :: TElem -> TypeMonad Type
 typeOfTElem (TupleTup _ tbox) =
     typeOfTBox tbox
 
@@ -270,28 +269,28 @@ typeOfTElem (TupleAtom pos varname) = do
 typeOfTElem (TupleIgn pos) =
     return (Polimorph pos)
 
-execTypeIf :: IfBl -> MyMonad ()
+execTypeIf :: IfBl -> TypeMonad ()
 execTypeIf (IfBlock _ expr block) = execTypeCondBlock expr block
 
-execTypeElifs :: [ElifBl] -> MyMonad ()
+execTypeElifs :: [ElifBl] -> TypeMonad ()
 execTypeElifs (e:es) =
     execTypeElif e >> execTypeElifs es
 execTypeElifs [] = return ()
 
-execTypeElif :: ElifBl -> MyMonad ()
+execTypeElif :: ElifBl -> TypeMonad ()
 execTypeElif (ElifBlock _ expr block) = execTypeCondBlock expr block
 
-execTypeElse :: ElseBl -> MyMonad ()
+execTypeElse :: ElseBl -> TypeMonad ()
 execTypeElse (ElseBlock _ block) = execTypeCondBlock condTrue block
 
-execTypeCondBlock :: Expr -> Block -> MyMonad ()
+execTypeCondBlock :: Expr -> Block -> TypeMonad ()
 execTypeCondBlock expr block = do
     exprType <- typeOfExpr expr
     if exprType /= (Bool BNFC'NoPosition)
         then throwError $ errorCondExprType exprType
         else execTypeBlock block >> return ()
 
-execTypeJump :: Bool -> BNFC'Position -> MyMonad ()
+execTypeJump :: Bool -> BNFC'Position -> TypeMonad ()
 execTypeJump isBreak pos = do
     s <- get
 
@@ -299,13 +298,13 @@ execTypeJump isBreak pos = do
         then throwError $ errorJumpOutsideLoop isBreak pos
         else return ()
 
-execTypeBlock :: Block -> MyMonad ()
+execTypeBlock :: Block -> TypeMonad ()
 execTypeBlock (StBlock _ stmts) = do
     s <- get
     retType <- execTypeStmts stmts
     put s
 
-typeOfExpr :: Expr -> MyMonad Type
+typeOfExpr :: Expr -> TypeMonad Type
 typeOfExpr (EVar pos varname) = do
     s <- get
     let varT = M.lookup varname $ varEnv s
@@ -371,7 +370,7 @@ typeOfExpr (EOr pos expr1 expr2) =
     typeOfBinOp (Bool BNFC'NoPosition) pos expr1 expr2 (Bool BNFC'NoPosition)
 
 
-typeOfBinOp :: Type -> BNFC'Position -> Expr -> Expr -> Type -> MyMonad Type
+typeOfBinOp :: Type -> BNFC'Position -> Expr -> Expr -> Type -> TypeMonad Type
 typeOfBinOp expected pos expr1 expr2 expectRet = do
     exprType1 <- typeOfExpr expr1
     exprType2 <- typeOfExpr expr2
@@ -391,7 +390,7 @@ _overwritePosition pos (Bool _) = Bool pos
 _overwritePosition pos (Tuple _ ts) = Tuple pos ts
 _overwritePosition pos (Polimorph _) = Polimorph pos
 
-_compareArgType :: Ident -> BNFC'Position -> (Type, Type) -> MyMonad ()
+_compareArgType :: Ident -> BNFC'Position -> (Type, Type) -> TypeMonad ()
 _compareArgType funname pos (expected, real) =
     if expected == real
         then return ()
@@ -403,15 +402,15 @@ _argsToTypes = map _argToType
 _argToType :: Arg -> Type
 _argToType (FnArg _ t _) = t
 
-_addArgs :: [Arg] -> MyMonad ()
+_addArgs :: [Arg] -> TypeMonad ()
 _addArgs (a:as) = (_addArg a) >> (_addArgs as)
 _addArgs [] = return ()
 
-_addArg :: Arg -> MyMonad ()
+_addArg :: Arg -> TypeMonad ()
 _addArg (FnArg _ t argname) = _addVar argname t False
 
 -- read-only variables cannot be overriden
-_addVar :: Ident -> Type -> Bool -> MyMonad ()
+_addVar :: Ident -> Type -> Bool -> TypeMonad ()
 _addVar varname vartype isReadOnly = do
     s <- get
     let prevVar = M.lookup varname $ varEnv s
@@ -427,7 +426,7 @@ _addVar varname vartype isReadOnly = do
                             vartype
                     else action
 
-_changeVar :: Ident -> Type -> MyMonad ()
+_changeVar :: Ident -> Type -> TypeMonad ()
 _changeVar varname eType = do
     s <- get
     let prevVar = M.lookup varname $ varEnv s

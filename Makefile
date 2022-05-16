@@ -14,7 +14,7 @@ ALEX_OPTS  = --ghc
 
 # Default goal.
 
-all : TestImper
+all : Imper
 
 # Rules for building the parser.
 
@@ -24,7 +24,7 @@ all : TestImper
 %.hs : %.x
 	${ALEX} ${ALEX_OPTS} $<
 
-TestImper : AbsImper.hs LexImper.hs ParImper.hs PrintImper.hs ErrorImper.hs TypecheckImper.hs TestImper.hs
+Imper : AbsImper.hs LexImper.hs ParImper.hs PrintImper.hs CommonImper.hs ErrorImper.hs TypecheckImper.hs InterpretImper.hs Imper.hs
 	${GHC} ${GHC_OPTS} $@
 
 # Rules for cleaning generated files.

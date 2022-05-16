@@ -8,3 +8,11 @@ zły typ zwracany przez return oraz użycie return poza funkcją lub
                         break / continue poza pętlą to typeerrory
 
 sygnatura tupli, odpakowania, typ i literały
+
+Lista wszystkich możliwych runTimeError:
+    - funkcja niczego nie zwróci
+    - dzielenie przez 0, modulo 0
+
+For nie powoduje nieskończonych pętli
+    (podanie większej wartości początkowej niż końcowej
+     skutkuje ciągiem malejącym iterowanych wartości)

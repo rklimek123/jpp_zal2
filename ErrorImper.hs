@@ -206,3 +206,26 @@ errorROVarOverride = msgROVarAction "overridden"
 
 errorROVarAssignment :: Ident -> Type -> Type -> String
 errorROVarAssignment = msgROVarAction "assigned to"
+
+errorFunNoReturn :: BNFC'Position -> Ident -> String
+errorFunNoReturn pos (Ident fname) =
+    (showString "Function `").
+    (showString fname).
+    (showString "` application didn't return anything\n").
+    (prettyPositionAtShort pos) $ ""
+
+errorDivZero :: BNFC'Position -> Int -> String
+errorDivZero p val =
+    (showString "Division by zero.\n").
+    (prettyPositionAtShort p).
+    (showString "\n\tReconstructed expression: (").
+    (shows val).
+    (showString " / 0)") $ ""
+
+errorModZero :: BNFC'Position -> Int -> String
+errorModZero p val =
+    (showString "Modulo zero.\n").
+    (prettyPositionAtShort p).
+    (showString "\n\tReconstructed expression: (").
+    (shows val).
+    (showString " % 0)") $ ""
