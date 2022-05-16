@@ -39,3 +39,7 @@ print t; print "\n";
 [a, t] :=: unflatten(flatten(<<1, <<_T, "good">> >>));
 
 print a; print " "; print t; print "\n";
+
+[a, [_, c]] :=: unflatten(flatten(<<1, <<_F, "good">> >>));
+
+print a; print " "; print c; print "\n";
