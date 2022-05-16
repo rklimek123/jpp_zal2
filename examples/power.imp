@@ -4,7 +4,7 @@ int power(int x, int n) {
     };
     var ret := 1;
 
-    for i:=1 to n {
+    for n:=n to 1 {
         ret := ret * x;
     };
 

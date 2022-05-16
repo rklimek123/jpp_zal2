@@ -17,6 +17,7 @@ interpret p =
         Left er -> putStrLn er
 
 data Val = IntV Int | BoolV Bool | StrV String | TupleV [Val]
+    deriving (Eq, Ord, Show, Read)
 valToInt :: Val -> Int
 valToInt (IntV a) = a
 valToInt _ = undefined
@@ -121,13 +122,18 @@ execStmt (CondElse _ ifBlock elifBlocks elseBlock) = do
             (_, inter3) <- execElseBlock elseBlock
             return inter3
 
-execStmt (For _ roAss@(Ass p iname beginE) endE block) = do
+execStmt (For _ roAss@(Ass p iname _) endE block) = do
     g <- get
+    endVal <- execExpr endE
     execVarDecl roAss
     beginVal <- execExpr (EVar p iname)
-    endVal <- execExpr endE
+    let bVal = valToInt beginVal
+    let eVal = valToInt endVal
+    let nextIter = if bVal <= eVal
+                    then ((+) 1)
+                    else (\x -> x - 1)
 
-    inter <- execFor (valToInt beginVal) (valToInt endVal) block
+    inter <- execFor iname eVal nextIter block
     
     softOverwriteEnv g
     return inter
@@ -324,18 +330,21 @@ execStmts (s:st) = do
         _ -> return inter
 execStmts [] = return INone
 
-execFor :: Int -> Int -> Block -> MainMonad Interruption
-execFor begin end block =
-    let nextIter = if begin <= end then (1+) else (1-)
-    in do
-        inter <- execBlock block
-        case inter of
-            IBreak -> return INone
-            IReturn _ -> return inter
-            _ ->
-                if begin == end
-                    then return INone
-                    else execFor (nextIter begin) end block
+execFor :: Ident -> Int -> (Int -> Int) -> Block -> MainMonad Interruption
+execFor iname end step block = do
+    inter <- execBlock block
+    iterVal <- execExpr $ EVar BNFC'NoPosition iname
+    let iVal = valToInt iterVal
+
+    case inter of
+        IBreak -> return INone
+        IReturn _ -> return inter
+        _ ->
+            if iVal == end
+                then return INone
+                else
+                    changeVar iname (IntV $ step iVal)
+                    >> execFor iname end step block
 
 execWhile :: Expr -> Block -> MainMonad Interruption
 execWhile expr block = do
