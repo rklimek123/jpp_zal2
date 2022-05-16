@@ -39,15 +39,11 @@ run :: Verbosity -> ParseFun Program -> String -> IO ()
 run v p s =
   case p ts of
     Left err -> do
-      putStrLn "\nParse              Failed...\n"
-      putStrV v "Tokens:"
-      mapM_ (putStrV v . showPosToken . mkPosToken) ts
       putStrLn err
       exitFailure
     Right tree -> typeCheck tree
   where
   ts = myLexer s
-  showPosToken ((l,c),t) = concat [ show l, ":", show c, "\t", show t ]
 
 usage :: IO ()
 usage = do
