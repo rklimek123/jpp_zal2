@@ -14,6 +14,7 @@ import Prelude
   , FilePath
   , getContents, readFile
   )
+import System.IO (hPutStrLn, stdin, stderr)
 import System.Environment ( getArgs )
 import System.Exit        ( exitFailure )
 import Control.Monad      ( when )
@@ -39,7 +40,7 @@ run :: Verbosity -> ParseFun Program -> String -> IO ()
 run v p s =
   case p ts of
     Left err -> do
-      putStrLn err
+      hPutStrLn stderr err
       exitFailure
     Right tree -> typeCheck tree
   where

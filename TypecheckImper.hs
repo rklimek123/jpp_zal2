@@ -6,6 +6,8 @@ import qualified Data.Map as M
 import Control.Monad.Except
 import Control.Monad.State
 
+import System.IO (hPutStrLn, stdin, stderr)
+
 import AbsImper
 import ErrorImper
 import InterpretImper (interpret)

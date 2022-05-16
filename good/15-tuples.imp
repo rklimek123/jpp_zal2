@@ -1,0 +1,41 @@
+<int, bool, string> flatten(<int, <bool, string> > tup) {
+    var a := 0;
+    var b1 := _F;
+    var b2 := "";
+
+    var b := <<b1, b2>>;
+    [a, b] :=: tup;
+    [b1, b2] :=: b;
+
+    return <<a, b1, b2>>;
+};
+
+<int, <bool, string> > unflatten(<int, bool, string> tup) {
+    var a := 0;
+    var b := _F;
+    var c := "";
+    [a, b, c] :=: tup;
+    return <<a, <<b, c>> >>;
+};
+
+var a := 0;
+var b := _F;
+var c := "";
+[a, _, _] :=: flatten(<<1, <<_F, "curse words">> >>);
+[_, b, _] :=: flatten(<<99, <<_T, "curse words">> >>);
+[_, _, c] :=: flatten(<<99, <<_T, "good">> >>);
+
+print a; print " "; print b; print " "; print c; print "\n";
+
+[a, _] :=: unflatten(flatten(<<1, <<_F, "curse words">> >>));
+
+print a; print "\n";
+
+var t := <<_F, "">>;
+[_, t] :=: unflatten(flatten(<<99, <<_T, "good">> >>));
+
+print t; print "\n";
+
+[a, t] :=: unflatten(flatten(<<1, <<_T, "good">> >>));
+
+print a; print " "; print t; print "\n";

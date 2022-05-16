@@ -1,0 +1,88 @@
+print "INTEGER\n\n";
+
+const i := 5;
+const j := 2;
+
+print "Literals:\n";
+print "int i\t= ";
+print i;
+print "\n";
+print "int j\t= ";
+print j;
+print "\n\n";
+
+print "Arithmetic:\n";
+print "-i\t= ";
+print -i;
+print "\n";
+
+print "i + j\t= ";
+print i + j;
+print "\n";
+
+print "i - j\t= ";
+print i - j;
+print "\n";
+
+print "i * j\t= ";
+print i * j;
+print "\n";
+
+print "i / j\t= ";
+print i / j;
+print "\n";
+
+print "i % j\t= ";
+print i % j;
+print "\n\n";
+
+print "Comparisons:\n";
+print "i < j\t= ";
+print i < j;
+print "\n";
+
+print "i <= j\t= ";
+print i <= j;
+print "\n";
+
+print "i == j\t= ";
+print i == j;
+print "\n";
+
+print "i != j\t= ";
+print i != j;
+print "\n";
+
+print "i >= j\t= ";
+print i >= j;
+print "\n";
+
+print "i > j\t= ";
+print i > j;
+print "\n\n\n";
+
+print "BOOLEAN\n\n";
+
+const t := _T;
+const f := _F;
+
+print "Literals:\n";
+print "bool t\t= ";
+print t;
+print "\n";
+print "bool f\t= ";
+print f;
+print "\n\n";
+
+print "Operators:\n";
+print "!t\t= ";
+print !t;
+print "\n";
+
+print "t && f\t= ";
+print t && f;
+print "\n";
+
+print "t || f\t= ";
+print t || f;
+print "\n";

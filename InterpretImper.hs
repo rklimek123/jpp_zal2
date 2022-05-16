@@ -7,6 +7,8 @@ import Data.Maybe
 import Control.Monad.Except
 import Control.Monad.State
 
+import System.IO (hPutStrLn, stdin, stderr)
+
 import AbsImper
 import ErrorImper
 
@@ -14,7 +16,7 @@ interpret :: Program -> IO()
 interpret p =
     case evalProgram p of
         Right output -> output
-        Left er -> putStrLn er
+        Left (out, er) -> hPutStrLn stdin out >> hPutStrLn stderr er
 
 data Val = IntV Int | BoolV Bool | StrV String | TupleV [Val]
     deriving (Eq, Ord, Show, Read)
@@ -73,12 +75,12 @@ emptyGlobal = Global {
 
 data Interruption = INone | IBreak | IContinue | IReturn Val
 
-type MainMonad = ExceptT String (State Global)
+type MainMonad = ExceptT (String, String) (State Global)
 
-evalProgram :: Program -> Either String (IO())
+evalProgram :: Program -> Either (String, String) (IO())
 evalProgram = execMainMonad.execProgram
 
-execMainMonad :: MainMonad (IO()) -> Either String (IO())
+execMainMonad :: MainMonad (IO()) -> Either (String, String) (IO())
 execMainMonad m = evalState (runExceptT m) emptyGlobal
 
 execProgram :: Program -> MainMonad (IO())

@@ -1,0 +1,21 @@
+var join := " + ";
+
+int print_double (string s1, string s2) {
+    print s1;
+    print join;
+    print s2;
+    return 0;
+};
+
+join := ": ";
+print_double("HaskellImper", "Static");
+
+join := " + ";
+print_double("Typecheck", "Interpreter");
+
+var b := 0 != 0;
+
+if (b) {
+    print "\nCurse words";
+};
+

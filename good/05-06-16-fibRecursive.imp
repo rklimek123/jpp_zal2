@@ -29,3 +29,10 @@ while (_T) {
     continue;
     print "Hideous curse words\n";
 };
+
+print "\n\nShow that condition (n < 30) works for while:\n";
+while (n < 30) {
+    print n;
+    print "\n";
+    n := n + 1;
+};

@@ -1,0 +1,26 @@
+var a := 1;
+int f() {
+    a := a + 1;
+    print a;
+    print "\n";
+    return a;
+};
+
+var a := 999;
+f();
+a := a - 1;
+f();
+a := a - 10;
+f();
+
+print a;
+print "\n";
+
+a := f();
+
+print a;
+print "\n";
+
+a := 1000;
+
+f();

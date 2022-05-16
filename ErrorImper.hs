@@ -207,33 +207,28 @@ errorROVarOverride = msgROVarAction "overridden"
 errorROVarAssignment :: Ident -> Type -> Type -> String
 errorROVarAssignment = msgROVarAction "assigned to"
 
-errorFunNoReturn :: ShowS -> BNFC'Position -> Ident -> String
-errorFunNoReturn out pos (Ident fname) =
-    (putPreviousOutput out).
+errorFunNoReturn :: ShowS -> BNFC'Position -> Ident -> (String, String)
+errorFunNoReturn out pos (Ident fname) = (
+    out "",
     (showString "Function `").
     (showString fname).
     (showString "` application didn't return anything\n").
-    (prettyPositionAtShort pos) $ ""
+    (prettyPositionAtShort pos) $ "")
 
-errorDivZero :: ShowS -> BNFC'Position -> Int -> String
-errorDivZero out p val =
-    (putPreviousOutput out).
+errorDivZero :: ShowS -> BNFC'Position -> Int -> (String, String)
+errorDivZero out p val = (
+    out "",
     (showString "Division by zero.\n").
     (prettyPositionAtShort p).
     (showString "\n\tReconstructed expression: (").
     (shows val).
-    (showString " / 0)") $ ""
+    (showString " / 0)") $ "")
 
-errorModZero :: ShowS -> BNFC'Position -> Int -> String
-errorModZero out p val =
-    (putPreviousOutput out).
+errorModZero :: ShowS -> BNFC'Position -> Int -> (String, String)
+errorModZero out p val = (
+    out "",
     (showString "Modulo by zero.\n").
     (prettyPositionAtShort p).
     (showString "\n\tReconstructed expression: (").
     (shows val).
-    (showString " % 0)") $ ""
-
-putPreviousOutput :: ShowS -> ShowS
-putPreviousOutput out =
-    out.
-    (showString "!!!!! RuntimeError !!!!!\n")
+    (showString " % 0)") $ "")

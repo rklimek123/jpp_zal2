@@ -1,0 +1,16 @@
+for i:=10 to 1 {
+    print i;
+    print ", ";
+};
+
+print "\n";
+
+for i:=0 to 9 {
+    print "|";
+    for j:=0 to 9 {
+        print " ";
+        print (i + j) % 10;
+        print " |";
+    };
+    print "\n";
+};

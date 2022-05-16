@@ -1,0 +1,11 @@
+const ro := 5;
+print (ro + 5);
+
+for i:=1 to 5 {
+    var nro := 10;
+    nro := nro + 5;
+    print nro;
+    print "\n";
+};
+
+print (nro + 5);
