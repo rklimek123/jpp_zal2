@@ -6,7 +6,7 @@ import qualified Data.Map as M
 import Control.Monad.Except
 import Control.Monad.State
 
-import System.IO (hPutStrLn, stdin, stderr)
+import System.IO (hPutStr, hPutStrLn, stderr)
 
 import AbsImper
 import ErrorImper
@@ -16,7 +16,7 @@ typeCheck :: Program -> IO()
 typeCheck p =
     case evalProgram p of
         Right _ -> interpret p
-        Left er -> putStr "Error:\t" >> putStrLn er
+        Left er -> hPutStr stderr "Error:\t" >> hPutStrLn stderr er
 
 type VarType = VarType' BNFC'Position
 -- The type and is the variable read-only

@@ -7,7 +7,7 @@ import Data.Maybe
 import Control.Monad.Except
 import Control.Monad.State
 
-import System.IO (hPutStrLn, stdin, stderr)
+import System.IO (hPutStrLn, stderr)
 
 import AbsImper
 import ErrorImper
@@ -16,7 +16,7 @@ interpret :: Program -> IO()
 interpret p =
     case evalProgram p of
         Right output -> output
-        Left (out, er) -> hPutStrLn stdin out >> hPutStrLn stderr er
+        Left (out, er) -> putStrLn out >> hPutStrLn stderr er
 
 data Val = IntV Int | BoolV Bool | StrV String | TupleV [Val]
     deriving (Eq, Ord, Show, Read)

@@ -14,7 +14,7 @@ import Prelude
   , FilePath
   , getContents, readFile
   )
-import System.IO (hPutStrLn, stdin, stderr)
+import System.IO (hPutStrLn, stderr)
 import System.Environment ( getArgs )
 import System.Exit        ( exitFailure )
 import Control.Monad      ( when )
