@@ -13,8 +13,8 @@ import ErrorImper
 interpret :: Program -> IO()
 interpret p =
     case evalProgram p of
-        Right output -> putStrLn $ output ""
-        Left er -> putStr "Error:\t" >> putStrLn er
+        Right output -> output
+        Left er -> putStrLn er
 
 data Val = IntV Int | BoolV Bool | StrV String | TupleV [Val]
 valToInt :: Val -> Int
@@ -51,7 +51,8 @@ data Global = Global {
         funEnv :: FunEnv,
         varEnv :: VarEnv,
         store :: Store,
-        nextFreeLoc :: Int
+        nextFreeLoc :: Int,
+        stdOut :: ShowS
     }
 
 data FunData = FunData {
@@ -65,51 +66,44 @@ emptyGlobal = Global {
     funEnv = M.empty,
     varEnv = M.empty,
     store = M.empty,
-    nextFreeLoc = 0
+    nextFreeLoc = 0,
+    stdOut = id
 }
-
-type MainMonad = ExceptT String (State Global)
 
 data Interruption = INone | IBreak | IContinue | IReturn Val
 
-setInterruption :: Interruption -> MainMonad ShowS -> MainMonad (ShowS, Interruption)
-setInterruption inter m = do
-    s <- m
-    return (s, inter)
+type MainMonad = ExceptT String (State Global)
 
-evalProgram :: Program -> Either String ShowS
+evalProgram :: Program -> Either String (IO())
 evalProgram = execMainMonad.execProgram
 
-execMainMonad :: MainMonad ShowS -> Either String ShowS
+execMainMonad :: MainMonad (IO()) -> Either String (IO())
 execMainMonad m = evalState (runExceptT m) emptyGlobal
 
-execProgram :: Program -> MainMonad ShowS
-execProgram (Prog _ pstmts) = execPstmts pstmts id
+execProgram :: Program -> MainMonad (IO())
+execProgram (Prog _ pstmts) = do
+    execPstmts pstmts
+    g <- get
+    return $ putStrLn (stdOut g "")
 
-execPstmts :: [ProgStmt] -> ShowS -> MainMonad ShowS
-execPstmts (p:ps) acc =
-    execPstmt p acc >>= execPstmts ps
-execPstmts [] acc = return acc
+execPstmts :: [ProgStmt] -> MainMonad ()
+execPstmts (p:ps) =
+    execPstmt p >> execPstmts ps
+execPstmts [] = return ()
 
-execPstmt :: ProgStmt -> ShowS -> MainMonad ShowS
-execPstmt (ProgSt _ stmt) acc = do
-    (side, _) <- execStmt stmt
-    return $ acc.side
-execPstmt (FnDef _ _ fname args block) acc = do
+execPstmt :: ProgStmt -> MainMonad ()
+execPstmt (ProgSt _ stmt) = execStmt stmt >> return ()
+execPstmt (FnDef _ _ fname args block) = do
     g <- get
     put $ _appendFunction fname args block g
-    return acc
 
-execStmt :: Stmt -> MainMonad (ShowS, Interruption)
-execStmt (Decl _ assSt) = setInterruption INone $ execVarDecl assSt
-execStmt (DeclRO _ assSt) = setInterruption INone $ execVarDecl assSt
-execStmt (AssStmt _ assSt) = setInterruption INone $ execAss assSt
+execStmt :: Stmt -> MainMonad Interruption
+execStmt (Decl _ assSt) = execVarDecl assSt >> return INone
+execStmt (DeclRO _ assSt) = execVarDecl assSt >> return INone
+execStmt (AssStmt _ assSt) = execAss assSt >> return INone
 
 execStmt (TupleAss p tbox expr) =
-    setInterruption INone $ do
-        (side, val) <- execExpr expr
-        reassignTElem (TupleTup p tbox) val
-        return side
+    execExpr expr >>= reassignTElem (TupleTup p tbox) >> return INone
 
 execStmt (Cond p ifBlock elifBlocks) =
     execStmt
@@ -118,64 +112,64 @@ execStmt (Cond p ifBlock elifBlocks) =
                 (StBlock p [Skip p])))
 
 execStmt (CondElse _ ifBlock elifBlocks elseBlock) = do
-    (side1, success1, inter1) <- execIfBlock ifBlock
-    if success1 then return (side1, inter1)
+    (success1, inter1) <- execIfBlock ifBlock
+    if success1 then return inter1
     else do
-        (side2, success2, inter2) <- execElifBlocks elifBlocks id
-        if success2 then return $ (side1.side2, inter2)
+        (success2, inter2) <- execElifBlocks elifBlocks
+        if success2 then return inter2
         else do
-            (side3, _, inter3) <- execElseBlock elseBlock
-            return $ (side1.side2.side3, inter3)
+            (_, inter3) <- execElseBlock elseBlock
+            return inter3
 
 execStmt (For _ roAss@(Ass p iname beginE) endE block) = do
     g <- get
-    side1 <- execVarDecl roAss
-    (_, beginVal) <- execExpr (EVar p iname)
-    (side2, endVal) <- execExpr endE
+    execVarDecl roAss
+    beginVal <- execExpr (EVar p iname)
+    endVal <- execExpr endE
 
-    (side3, inter) <- execFor (valToInt beginVal) (valToInt endVal) block id
+    inter <- execFor (valToInt beginVal) (valToInt endVal) block
     
     softOverwriteEnv g
-    return (side1.side2.side3, inter)
+    return inter
 
-execStmt (While _ expr block) = execWhile expr block id
+execStmt (While _ expr block) = execWhile expr block
 
 execStmt (Ret _ expr) = do
-    (side, val) <- execExpr expr
-    return (side, IReturn val)
+    val <- execExpr expr
+    return $ IReturn val
 
-execStmt (Break _) = return (id, IBreak)
-execStmt (Continue _) = return (id, IContinue)
+execStmt (Break _) = return IBreak
+execStmt (Continue _) = return IContinue
 
 execStmt (Print _ expr) = do
-    (side, val) <- execExpr expr
-    return (side.(prettyPrintVal val), INone)
+    val <- execExpr expr
+    g <- get
+    let toOut = prettyPrintVal val
+    put $ _writeToStdOut toOut g
 
-execStmt (Skip _) = return (id, INone)
+    return INone
 
-execStmt (SExp _ expr) = do
-    (side, _) <- execExpr expr
-    return (side, INone)
+execStmt (Skip _) = return INone
 
-execExpr :: Expr -> MainMonad (ShowS, Val)
+execStmt (SExp _ expr) =
+    execExpr expr >> return INone
+
+execExpr :: Expr -> MainMonad Val
 execExpr (EVar _ name) = do
     g <- get
     let val = fromJust (M.lookup (fromJust (M.lookup name $ varEnv g)) $ store g)
-    return (id, val)
+    return val
 
-execExpr (ELitInt _ i) = return (id, IntV $ fromInteger i)
-execExpr (ELitTrue _) = return (id, BoolV True)
-execExpr (ELitFalse _) = return (id, BoolV False)
+execExpr (ELitInt _ i) = return $ IntV (fromInteger i)
+execExpr (ELitTrue _) = return $ BoolV True
+execExpr (ELitFalse _) = return $ BoolV False
 
 execExpr (ELitTuple _ exprs) = do
-    results <- execExprs exprs
-    let (sides, vals) = unzip results
-    return (foldr (.) id sides, TupleV vals)
+    vals <- execExprs exprs
+    return $ TupleV vals
 
 execExpr (EApp pos fname exprs) = do
-    args <- execExprs exprs
-    let (sides, vals) = unzip args
-    let side1 = foldr (.) id sides
+    argVals <- execExprs exprs
 
     g <- get
     let f = fromJust $ M.lookup fname $ funEnv g
@@ -183,46 +177,49 @@ execExpr (EApp pos fname exprs) = do
         funEnv = funEnvF f,
         varEnv = varEnvF f,
         store = store g,
-        nextFreeLoc = nextFreeLoc g
+        nextFreeLoc = nextFreeLoc g,
+        stdOut = stdOut g
     }
 
-    addFunArgs $ zip (funArgs f) vals
-    (side2, inter) <- execBlock (funBlock f)
+    addFunArgs $ zip (funArgs f) argVals
+    inter <- execBlock $ funBlock f
 
     case inter of
         IReturn r -> do
             softOverwriteEnv g
-            return (side1.side2, r)
-        _ -> throwError $ errorFunNoReturn pos fname
+            return r
+        _ -> do
+            g' <- get
+            throwError $ errorFunNoReturn (stdOut g') pos fname
 
-execExpr (EString _ s) = return (id, StrV s)
+execExpr (EString _ s) = return $ StrV s
 
 execExpr (Neg _ expr) = do
-    (side, val) <- execExpr expr
+    val <- execExpr expr
     let num = valToInt val
-    return (side, IntV $ -num)
+    return $ IntV (-num)
 
 execExpr (Not _ expr) = do
-    (side, val) <- execExpr expr
+    val <- execExpr expr
     let b = valToBool val
-    return (side, BoolV $ not b)
+    return $ BoolV (not b)
 
 execExpr (EMul p e1 op e2) =
     execMul p op e1 e2
 
 execExpr (EAdd _ e1 op e2) = do
-    (side1, v1) <- execExpr e1
-    (side2, v2) <- execExpr e2
+    v1 <- execExpr e1
+    v2 <- execExpr e2
     let val1 = valToInt v1
     let val2 = valToInt v2
-    return (side1.side2, IntV $ funOpAdd op val1 val2)
+    return $ IntV (funOpAdd op val1 val2)
 
 execExpr (ERel _ e1 op e2) = do
-    (side1, v1) <- execExpr e1
-    (side2, v2) <- execExpr e2
+    v1 <- execExpr e1
+    v2 <- execExpr e2
     let val1 = valToInt v1
     let val2 = valToInt v2
-    return (side1.side2, BoolV $ funOpRel op val1 val2)
+    return $ BoolV (funOpRel op val1 val2)
 
 execExpr (EAnd _ e1 e2) =
     execBinBoolOp (&&) e1 e2
@@ -230,7 +227,7 @@ execExpr (EAnd _ e1 e2) =
 execExpr (EOr _ e1 e2) =
     execBinBoolOp (||) e1 e2
 
-execExprs :: [Expr] -> MainMonad [(ShowS, Val)]
+execExprs :: [Expr] -> MainMonad [Val]
 execExprs = mapM execExpr
 
 reassignTElems :: [TElem] -> [Val] -> MainMonad ()
@@ -271,127 +268,125 @@ addFunArg :: (Arg, Val) -> MainMonad ()
 addFunArg ((FnArg _ _ argname), argval) =
     addVar argname argval
 
-execVarDecl :: AStmt -> MainMonad ShowS
-execVarDecl (Ass _ varname expr) = do
-    (side, val) <- execExpr expr
-    addVar varname val
-    return side
+execVarDecl :: AStmt -> MainMonad ()
+execVarDecl (Ass _ varname expr) =
+    execExpr expr >>= addVar varname
 
-execAss :: AStmt -> MainMonad ShowS
+execAss :: AStmt -> MainMonad ()
 execAss (Ass _ varname expr) = do
-    (side, val) <- execExpr expr
-    changeVar varname val
-    return side
+    execExpr expr >>= changeVar varname
 
-execIfBlock :: IfBl -> MainMonad (ShowS, Bool, Interruption)
+execIfBlock :: IfBl -> MainMonad (Bool, Interruption)
 execIfBlock (IfBlock _ expr block) =
     execCond expr block
 
-execElifBlocks :: [ElifBl] -> ShowS -> MainMonad (ShowS, Bool, Interruption)
-execElifBlocks (e:es) acc = do
-    (side, success, inter) <- execElifBlock e
+execElifBlocks :: [ElifBl] -> MainMonad (Bool, Interruption)
+execElifBlocks (e:es) = do
+    (success, inter) <- execElifBlock e
     if success
-        then return (acc.side, True, inter)
-        else execElifBlocks es $ acc.side
-execElifBlocks [] acc = return (acc, False, INone)
+        then return (True, inter)
+        else execElifBlocks es
+execElifBlocks [] = return (False, INone)
 
-execElifBlock :: ElifBl -> MainMonad (ShowS, Bool, Interruption)
+execElifBlock :: ElifBl -> MainMonad (Bool, Interruption)
 execElifBlock (ElifBlock _ expr block) =
     execCond expr block
 
-execElseBlock :: ElseBl -> MainMonad (ShowS, Bool, Interruption)
+execElseBlock :: ElseBl -> MainMonad (Bool, Interruption)
 execElseBlock (ElseBlock p block) =
     execCond (ELitTrue p) block
 
-execCond :: Expr -> Block -> MainMonad (ShowS, Bool, Interruption)
+execCond :: Expr -> Block -> MainMonad (Bool, Interruption)
 execCond expr block = do
-    (side, val) <- execExpr expr
+    val <- execExpr expr
     case val of
         BoolV b ->
             if b
                 then do
-                    (sideBlock, inter) <- execBlock block
-                    return (side.sideBlock, True, inter)
+                    inter <- execBlock block
+                    return (True, inter)
                 else
-                    return (side, False, INone)
+                    return (False, INone)
         _ -> undefined
 
-execBlock :: Block -> MainMonad (ShowS, Interruption)
+execBlock :: Block -> MainMonad Interruption
 execBlock (StBlock _ stmts) = do
     g <- get
-    side <- execStmts stmts id
+    inter <- execStmts stmts
     softOverwriteEnv g
-    return side
+    return inter
 
-execStmts :: [Stmt] -> ShowS -> MainMonad (ShowS, Interruption)
-execStmts (s:st) acc = do
-    (side, inter) <- execStmt s
+execStmts :: [Stmt] -> MainMonad Interruption
+execStmts (s:st) = do
+    inter <- execStmt s
     case inter of
-        INone -> execStmts st (acc.side)
-        _ -> return (acc.side, inter)
-execStmts [] acc = return (acc, INone)
+        INone -> execStmts st
+        _ -> return inter
+execStmts [] = return INone
 
-execFor :: Int -> Int -> Block -> ShowS -> MainMonad (ShowS, Interruption)
-execFor begin end block acc =
+execFor :: Int -> Int -> Block -> MainMonad Interruption
+execFor begin end block =
     let nextIter = if begin <= end then (1+) else (1-)
     in do
-        (side, inter) <- execBlock block
+        inter <- execBlock block
         case inter of
-            IBreak -> return (acc.side, INone)
-            IReturn _ -> return (acc.side, inter)
+            IBreak -> return INone
+            IReturn _ -> return inter
             _ ->
                 if begin == end
-                    then return (acc.side, INone)
-                    else execFor (nextIter begin) end block $ acc.side
+                    then return INone
+                    else execFor (nextIter begin) end block
 
-execWhile :: Expr -> Block -> ShowS -> MainMonad (ShowS, Interruption)
-execWhile expr block acc = do
-    (side1, val) <- execExpr expr
+execWhile :: Expr -> Block -> MainMonad Interruption
+execWhile expr block = do
+    val <- execExpr expr
     if valToBool val
         then do
-            (side2, inter) <- execBlock block
+            inter <- execBlock block
             case inter of
-                IBreak -> return (acc.side1.side2, INone)
-                IReturn _ -> return (acc.side1.side2, inter)
-                _ -> execWhile expr block $ acc.side1.side2
-        else return (acc.side1, INone)
+                IBreak -> return INone
+                IReturn _ -> return inter
+                _ -> execWhile expr block
+        else return INone
 
-execMul :: BNFC'Position -> MulOp -> Expr -> Expr -> MainMonad (ShowS, Val)
+execMul :: BNFC'Position -> MulOp -> Expr -> Expr -> MainMonad Val
 execMul _ op@(Times _) e1 e2 = do
-    (side1, v1) <- execExpr e1
-    (side2, v2) <- execExpr e2
+    v1 <- execExpr e1
+    v2 <- execExpr e2
     let val1 = valToInt v1
     let val2 = valToInt v2
 
-    return (side1.side2, IntV $ funOpMul op val1 val2)
+    return $ IntV (funOpMul op val1 val2)
 
 execMul p op@(Div _) e1 e2 = do
-    (side1, v1) <- execExpr e1
-    (side2, v2) <- execExpr e2
+    v1 <- execExpr e1
+    v2 <- execExpr e2
     let val1 = valToInt v1
     let val2 = valToInt v2
-    
+    g <- get
+
     if val2 == 0
-        then throwError $ errorDivZero p val1
-        else return (side1.side2, IntV $ funOpMul op val1 val2)
+        then throwError $ errorDivZero (stdOut g) p val1
+        else return $ IntV (funOpMul op val1 val2)
 
 execMul p op@(Mod _) e1 e2 = do
-    (side1, v1) <- execExpr e1
-    (side2, v2) <- execExpr e2
+    v1 <- execExpr e1
+    v2 <- execExpr e2
     let val1 = valToInt v1
     let val2 = valToInt v2
+    g <- get
     
     if val2 == 0
-        then throwError $ errorModZero p val1
-        else return (side1.side2, IntV $ funOpMul op val1 val2)
+        then throwError $ errorModZero (stdOut g) p val1
+        else return $ IntV (funOpMul op val1 val2)
 
-execBinBoolOp :: (Bool -> Bool -> Bool) -> Expr -> Expr -> MainMonad (ShowS, Val)
+execBinBoolOp :: (Bool -> Bool -> Bool) -> Expr -> Expr -> MainMonad Val
 execBinBoolOp binOp e1 e2 = do
-    (side1, v1) <- execExpr e1
-    (side2, v2) <- execExpr e2
+    v1 <- execExpr e1
+    v2 <- execExpr e2
     let val1 = valToBool v1
     let val2 = valToBool v2
-    return (side1.side2, BoolV $ binOp val1 val2)
+    return $ BoolV (binOp val1 val2)
 
 funOpMul :: MulOp -> (Int -> Int -> Int)
 funOpMul (Times _) = (*)
@@ -417,24 +412,20 @@ softOverwriteEnv g = do
     let varenv = varEnv g
     let sstore = store g'
     let nextfreeloc = nextFreeLoc g
-    put $ Global funenv varenv sstore nextfreeloc
+    let stdout = stdOut g'
+    put $ Global funenv varenv sstore nextfreeloc stdout
 
 _appendFunction :: Ident -> [Arg] -> Block -> Global -> Global
 _appendFunction fname args funblock glob =
-    Global {
-        funEnv =
-            _appendFunctionRecursive fname args funblock glob,
-        varEnv = varEnv glob,
-        store = store glob,
-        nextFreeLoc = nextFreeLoc glob }
+    glob {
+        funEnv = _appendFunctionRecursive fname args funblock glob
+    }
 
 _appendVar :: Ident -> Loc -> Global -> Global
 _appendVar varname loc glob =
-    Global {
-        funEnv = funEnv glob,
-        varEnv = M.insert varname loc $ varEnv glob,
-        store = store glob,
-        nextFreeLoc = nextFreeLoc glob }
+    glob {
+        varEnv = M.insert varname loc $ varEnv glob
+    }
 
 _appendFunctionRecursive :: Ident -> [Arg] -> Block -> Global -> FunEnv
 _appendFunctionRecursive fname args funblock glob =
@@ -450,16 +441,16 @@ _appendFunctionRecursive fname args funblock glob =
 
 _incrementNextFreeLoc :: Global -> Global
 _incrementNextFreeLoc glob =
-    Global {
-        funEnv = funEnv glob,
-        varEnv = varEnv glob,
-        store = store glob,
-        nextFreeLoc = 1 + nextFreeLoc glob }
+    glob {
+        nextFreeLoc = 1 + nextFreeLoc glob
+    }
 
 _writeStore :: Loc -> Val -> Global -> Global
 _writeStore loc val glob =
-    Global {
-        funEnv = funEnv glob,
-        varEnv = varEnv glob,
-        store = M.insert loc val $ store glob,
-        nextFreeLoc = nextFreeLoc glob }
+    glob {
+        store = M.insert loc val $ store glob }
+
+_writeToStdOut :: ShowS -> Global -> Global
+_writeToStdOut toWrite glob =
+    glob {
+        stdOut = (stdOut glob).toWrite }
